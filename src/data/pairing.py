@@ -116,8 +116,8 @@ def pair_ehr_to_wearable(
 
     # Fill missing HbA1c with mean so it doesn't dominate distance
     global_hba1c_mean = pd.concat([cgm_feat["hba1c"], ehr_feat["hba1c"]]).mean()
-    cgm_feat["hba1c"].fillna(global_hba1c_mean, inplace=True)
-    ehr_feat["hba1c"].fillna(global_hba1c_mean, inplace=True)
+    cgm_feat["hba1c"] = cgm_feat["hba1c"].fillna(global_hba1c_mean)
+    ehr_feat["hba1c"] = ehr_feat["hba1c"].fillna(global_hba1c_mean)
 
     # Z-score normalise each feature so weights are meaningful
     combined = pd.concat([

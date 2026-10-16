@@ -204,10 +204,12 @@ class LinearARXBaseline(BaselineModel):
         from sklearn.linear_model import Ridge, LogisticRegression
         from sklearn.preprocessing import StandardScaler
         from sklearn.pipeline import Pipeline
+        from sklearn.impute import SimpleImputer
 
         self._feature_cols = [c for c in FEATURE_COLUMNS if c in X.columns]
         X_clean = X[self._feature_cols].copy()
-        X_clean = X_clean.fillna(X_clean.median())
+        # Use SimpleImputer: median where data exists, 0 for all-NaN columns
+        X_clean = X_clean.fillna(X_clean.median().fillna(0))
 
         # Regression models for glucose targets
         for target_col in TARGET_COLUMNS:
@@ -221,6 +223,7 @@ class LinearARXBaseline(BaselineModel):
                 continue
 
             pipe = Pipeline([
+                ("imputer", SimpleImputer(strategy="constant", fill_value=0)),
                 ("scaler", StandardScaler()),
                 ("ridge", Ridge(alpha=1.0)),
             ])
@@ -237,6 +240,7 @@ class LinearARXBaseline(BaselineModel):
                 continue
 
             pipe = Pipeline([
+                ("imputer", SimpleImputer(strategy="constant", fill_value=0)),
                 ("scaler", StandardScaler()),
                 ("lr", LogisticRegression(
                     max_iter=1000,
@@ -255,7 +259,7 @@ class LinearARXBaseline(BaselineModel):
 
     def predict(self, X: pd.DataFrame) -> pd.DataFrame:
         """Predict glucose at each horizon."""
-        X_clean = X[self._feature_cols].copy().fillna(X[self._feature_cols].median())
+        X_clean = X[self._feature_cols].copy().fillna(X[self._feature_cols].median().fillna(0))
         preds = {}
 
         for target_col in TARGET_COLUMNS:
@@ -269,7 +273,7 @@ class LinearARXBaseline(BaselineModel):
 
     def predict_proba(self, X: pd.DataFrame) -> pd.DataFrame:
         """Predict event probabilities."""
-        X_clean = X[self._feature_cols].copy().fillna(X[self._feature_cols].median())
+        X_clean = X[self._feature_cols].copy().fillna(X[self._feature_cols].median().fillna(0))
         proba = {}
 
         for event_col in EVENT_COLUMNS:
