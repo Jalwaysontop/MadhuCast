@@ -1,4 +1,0 @@
-# file: /Users/aadvikchaturvedi/digital_twin/src/serving/timeseries.py
-# hypothesis_version: 6.140.0
-
-[0.0, 0.5, 1.0, 120, 121, 240, '%H:%M', 'Asia/Kolkata', 'UTC', 'cgm', 'datetime64[ns]', 'glucose', 'hr', 'inf', 'interpolated', 'missing_mask', 'q05', 'q10', 'q50', 'q90', 'q95', 'sleep_proxy', 't', 't_min', 'wearable']

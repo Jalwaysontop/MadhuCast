@@ -1,4 +1,0 @@
-# file: /Users/aadvikchaturvedi/digital_twin/src/serving/fhir_export.py
-# hypothesis_version: 6.140.0
-
-[120, 240, '+00:00', '4.3.0 (R4B)', '99504-3', 'Bundle', 'F', 'HTEST', 'Laboratory', 'M', 'Observation', 'Patient', 'RiskAssessment', 'Z', '__main__', 'active', 'category', 'code', 'coding', 'collection', 'component', 'display', 'docs', 'effectiveDateTime', 'effectivePeriod', 'end', 'entry', 'female', 'final', 'forecast', 'fullUrl', 'gender', 'glucose', 'http://loinc.org', 'id', 'identifier', 'issued', 'laboratory', 'male', 'meta', 'method', 'mg/dL', 'missing_mask', 'note', 'occurrenceDateTime', 'outcome', 'prediction', 'preliminary', 'probabilityDecimal', 'q05', 'q10', 'q50', 'q90', 'q95', 'reference', 'resource', 'resourceType', 'samples', 'seconds', 'start', 'status', 'subject', 'synthetic', 'system', 't', 'tag', 'test health data', 'text', 'timestamp', 'type', 'unit', 'urn:madhutwin:tags', 'value', 'valueQuantity', 'whenPeriod']

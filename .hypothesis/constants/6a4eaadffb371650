@@ -1,4 +1,0 @@
-# file: /Users/aadvikchaturvedi/digital_twin/dashboard/components/charts.py
-# hypothesis_version: 6.140.0
-
-[0.12, 0.28, 1.02, 1.05, 1.5, 2.5, 40.0, 60.0, 200.0, 400.0, 140, 260, 300, 320, 380, 420, ' · planned', '#', '#0072B2', '#009E73', '#333', '#56B4E9', '#999999', '#CC79A7', '#D55E00', '#E69F00', '#F0E442', '%H:%M', '.0%', '/', '180 spike', '70 hypo', '</extra>', '<70', '>180', 'A', 'B', 'C', 'CGM missing', 'Cividis', 'D', 'E', 'Empirical', 'Forecast', 'Glucose (mg/dL)', 'Meal (size = GL)', 'Nominal / predicted', 'Observed', 'Observed CGM', 'Perfect', 'bottom', 'bottom left', 'dash', 'dot', 'empirical', 'glucose', 'h', 'interpolated', 'kind', 'lines', 'lines+markers', 'markers', 'missing', 'name', 'nominal', 'now', 'outside', 'paper', 'q05', 'q10', 'q50', 'q90', 'q95', 'share', 'skip', 't', 't_min', 'tonexty', 'top left', 'toself', 'triangle-up', 'x unified', 'zone']

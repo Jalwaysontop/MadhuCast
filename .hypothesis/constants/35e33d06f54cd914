@@ -1,4 +1,0 @@
-# file: /Users/aadvikchaturvedi/digital_twin/src/serving/logbook.py
-# hypothesis_version: 6.140.0
-
-['MADHUTWIN_LOG_DIR', 'a', 'action', 'alert_id', 'alert_time', 'audit.jsonl', 'consent_flag', 'detail', 'false_alarm', 'feedback.jsonl', 'label', 'logged_at', 'logs', 'missed_event', 'model_version', 'note', 'patient_id', 'seconds', 'stub', 'useful', 'utf-8']

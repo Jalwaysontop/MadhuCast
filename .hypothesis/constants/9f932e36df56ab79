@@ -1,4 +1,0 @@
-# file: /Users/aadvikchaturvedi/digital_twin/src/serving/alerts.py
-# hypothesis_version: 6.140.0
-
-[0.0, 1e-09, 0.25, 0.5, 2.0, 4.0, 120, 180, 3600, 10000, 'ACTIVE', 'CRITICAL', 'NO ALERT', 'RESOLVED', 'WARNING', 'WATCH', 'confidence_gate', 'healthy', 'high', 'hypo', 'inf', 'low', 'mid', 'no CGM data', 'now', 'prediabetes', 'q10', 'q50', 'q90', 'rule_net', 'spike', 'strata', 't2d', 't_min', 'unknown', '≤120 min']
