@@ -1,0 +1,4 @@
+# file: /Users/aadvikchaturvedi/digital_twin/dashboard/components/tables.py
+# hypothesis_version: 6.140.0
+
+['Apache-2.0', 'Caveat', 'Dataset', 'Derived', 'Dynamic feature', 'Dynamic stream', 'Generated in-project', 'Genetic risk score', 'Licence', 'MOCK', 'Meals / what-if', 'Provenance', 'REAL', 'Role', 'SYNTHETIC', 'Sleep signal', 'Static feature', 'Static stream', 'cell', 'ci_high', 'ci_low', 'false_alarm', 'mae', 'metric', 'n_participants', 'rmse', 'value', 'variant']

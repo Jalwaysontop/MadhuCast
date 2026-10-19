@@ -81,8 +81,20 @@ def food_db() -> pd.DataFrame:
     df["licence"] = "MOCK (project-internal placeholder)"
     df["assumption_flag"] = df["assumption_flag"].astype(str)
     return df[
-        ["food", "portion_unit", "grams_per_unit", "carbs_g", "protein_g", "fat_g",
-         "fibre_g", "gi", "gl_per_unit", "source", "licence", "assumption_flag"]
+        [
+            "food",
+            "portion_unit",
+            "grams_per_unit",
+            "carbs_g",
+            "protein_g",
+            "fat_g",
+            "fibre_g",
+            "gi",
+            "gl_per_unit",
+            "source",
+            "licence",
+            "assumption_flag",
+        ]
     ]
 
 
@@ -120,8 +132,14 @@ def resolve_meal(items: list[dict[str, Any]], t: datetime | None = None, label: 
     return Meal(
         t=t or datetime(2026, 1, 1, tzinfo=UTC),
         label=label or " + ".join(names),
-        items=[{"food": i["food"], "portion": float(i.get("portion", 1)),
-                "unit": i.get("unit") or str(db.loc[i["food"], "portion_unit"])} for i in items],
+        items=[
+            {
+                "food": i["food"],
+                "portion": float(i.get("portion", 1)),
+                "unit": i.get("unit") or str(db.loc[i["food"], "portion_unit"]),
+            }
+            for i in items
+        ],
         assumption_flags=flags or None,
         provenance=Provenance.MOCK,
         **{k: round(v, 2) for k, v in tot.items()},
@@ -136,8 +154,12 @@ MEALS: dict[str, list[tuple[str, float, str]]] = {
     "dosa": [("dosa (plain)", 2, "piece"), ("sambar", 1, "katori")],
     "oats": [("oats porridge", 1, "katori"), ("masala chai (no sugar)", 1, "cup")],
     "upma": [("upma", 1, "katori"), ("masala chai (sugar)", 1, "cup")],
-    "roti_dal": [("wheat roti", 3, "piece"), ("dal (toor)", 1, "katori"),
-                 ("mixed veg sabzi", 1, "katori"), ("curd", 1, "katori")],
+    "roti_dal": [
+        ("wheat roti", 3, "piece"),
+        ("dal (toor)", 1, "katori"),
+        ("mixed veg sabzi", 1, "katori"),
+        ("curd", 1, "katori"),
+    ],
     "rice_sambar": [("white rice", 1.5, "katori"), ("sambar", 1, "katori"), ("curd", 1, "katori")],
     "rajma_rice": [("white rice", 1, "katori"), ("rajma", 1, "katori")],
     "biryani": [("veg biryani", 1, "plate"), ("curd", 1, "katori")],
@@ -145,8 +167,7 @@ MEALS: dict[str, list[tuple[str, float, str]]] = {
     "fruit": [("apple", 1, "piece")],
     "sprouts": [("sprouts salad", 1, "katori"), ("buttermilk", 1, "glass")],
     "rice_heavy": [("white rice", 2, "katori"), ("sambar", 1, "katori"), ("curd", 1, "katori")],
-    "roti_paneer": [("wheat roti", 2, "piece"), ("paneer curry", 1, "katori"),
-                    ("mixed veg sabzi", 1, "katori")],
+    "roti_paneer": [("wheat roti", 2, "piece"), ("paneer curry", 1, "katori"), ("mixed veg sabzi", 1, "katori")],
     "khichdi": [("khichdi", 1.5, "katori"), ("curd", 1, "katori")],
     "chicken_rice": [("white rice", 1.5, "katori"), ("chicken curry", 1, "katori")],
     "millet": [("millet roti (bajra)", 2, "piece"), ("dal (toor)", 1, "katori"), ("palak", 1, "katori")],
@@ -178,46 +199,219 @@ def _p(*xs):
 
 
 SPECS: tuple[Spec, ...] = (
-    Spec("P-001", "healthy", "F", 29, 21.5, 5.1, 92, 7.5, 7.4,
-         _p(("b", "08:00", "idli"), ("l", "13:00", "roti_dal"), ("s", "16:30", "fruit"), ("d", "20:15", "roti_paneer")),
-         walks=(("07:00", 30),), lipids={"ldl": 96, "hdl": 58, "tg": 92}),
-    Spec("P-002", "healthy", "M", 34, 23.8, 5.3, 95, 6.8, 7.0,
-         _p(("b", "08:45", "poha"), ("l", "13:30", "rice_sambar"), ("s", "17:00", "chai_samosa"), ("d", "20:30", "khichdi")),
-         lipids={"ldl": 112, "hdl": 46, "tg": 130}),
-    Spec("P-003", "healthy", "F", 41, 22.9, 5.4, 92, 7.2, 7.2,
-         _p(("b", "08:15", "dosa"), ("l", "13:15", "rajma_rice"), ("s", "17:30", "sprouts"), ("d", "19:45", "roti_paneer")),
-         walks=(("18:30", 25),), lipids={"ldl": 104, "hdl": 55, "tg": 101}),
-    Spec("P-004", "healthy", "M", 25, 24.6, 5.2, 94, 6.0, 6.5,
-         _p(("b", "09:00", "upma"), ("l", "13:45", "biryani"), ("s", "17:00", "fruit"), ("d", "21:00", "chicken_rice")),
-         lipids={"ldl": 99, "hdl": 49, "tg": 118}),
-    Spec("P-005", "prediabetes", "M", 46, 26.8, 5.9, 104, 6.5, 6.6,
-         _p(("b", "08:30", "poha"), ("l", "13:30", "rice_sambar"), ("s", "17:15", "chai_samosa"), ("d", "20:00", "chicken_rice")),
-         comorbid=("dyslipidaemia",), lipids={"ldl": 138, "hdl": 41, "tg": 176}),
-    Spec("P-006", "prediabetes", "F", 51, 27.5, 6.1, 108, 7.0, 7.0,
-         _p(("b", "08:00", "idli"), ("l", "13:00", "roti_dal"), ("s", "16:45", "fruit"), ("d", "20:00", "khichdi")),
-         walks=(("06:45", 30),), comorbid=("hypothyroidism",), lipids={"ldl": 126, "hdl": 50, "tg": 141}),
-    Spec("P-007", "prediabetes", "M", 39, 28.9, 6.0, 110, 6.2, 6.4,
-         _p(("b", "08:30", "dosa"), ("l", "13:30", "biryani"), ("s", "17:00", "chai_samosa"), ("d", "19:30", "rice_heavy")),
-         lipids={"ldl": 141, "hdl": 39, "tg": 192}),
-    Spec("P-008", "prediabetes", "F", 57, 25.9, 6.3, 112, 6.8, 7.0,
-         _p(("b", "08:00", "oats"), ("l", "13:00", "rajma_rice"), ("s", "17:00", "sprouts"), ("d", "20:00", "roti_paneer")),
-         walks=(("07:00", 20),), comorbid=("hypertension",), lipids={"ldl": 129, "hdl": 52, "tg": 150}),
-    Spec("P-009", "t2d", "M", 58, 29.4, 7.6, 148, 6.5, 6.8,
-         _p(("b", "08:30", "upma"), ("l", "13:30", "rice_sambar"), ("s", "17:00", "chai_samosa"), ("d", "20:00", "chicken_rice")),
-         meds=("metformin 500 mg BD",), comorbid=("hypertension", "dyslipidaemia"),
-         lipids={"ldl": 132, "hdl": 38, "tg": 214}),
-    Spec("P-010", "t2d", "F", 54, 30.2, 8.4, 146, 5.5, 7.1,
-         _p(("b", "08:30", "idli"), ("l", "13:30", "rice_sambar"), ("s", "17:00", "chai_samosa"), ("d", "20:00", "rice_heavy")),
-         meds=("metformin 500 mg BD",), comorbid=("hypertension",),
-         lipids={"ldl": 128, "hdl": 38, "tg": 210}),
-    Spec("P-011", "t2d", "M", 63, 26.1, 7.2, 138, 7.0, 7.0,
-         _p(("b", "08:00", "oats"), ("l", "13:00", "roti_dal"), ("s", "16:30", "fruit"), ("d", "20:30", "millet")),
-         walks=(("18:00", 30),), meds=("metformin 1 g BD", "glimepiride 2 mg OD"), comorbid=("CKD stage 2",),
-         lipids={"ldl": 110, "hdl": 44, "tg": 160}),
-    Spec("P-012", "t2d", "F", 49, 32.5, 9.1, 168, 6.0, 6.3,
-         _p(("b", "09:00", "poha"), ("l", "14:00", "biryani"), ("s", "17:30", "chai_samosa"), ("d", "21:00", "rice_heavy")),
-         meds=("metformin 1 g BD", "sitagliptin 100 mg OD"), comorbid=("hypertension", "obesity"),
-         history_days=2, lipids={"ldl": 151, "hdl": 35, "tg": 248}),
+    Spec(
+        "P-001",
+        "healthy",
+        "F",
+        29,
+        21.5,
+        5.1,
+        92,
+        7.5,
+        7.4,
+        _p(("b", "08:00", "idli"), ("l", "13:00", "roti_dal"), ("s", "16:30", "fruit"), ("d", "20:15", "roti_paneer")),
+        walks=(("07:00", 30),),
+        lipids={"ldl": 96, "hdl": 58, "tg": 92},
+    ),
+    Spec(
+        "P-002",
+        "healthy",
+        "M",
+        34,
+        23.8,
+        5.3,
+        95,
+        6.8,
+        7.0,
+        _p(
+            ("b", "08:45", "poha"),
+            ("l", "13:30", "rice_sambar"),
+            ("s", "17:00", "chai_samosa"),
+            ("d", "20:30", "khichdi"),
+        ),
+        lipids={"ldl": 112, "hdl": 46, "tg": 130},
+    ),
+    Spec(
+        "P-003",
+        "healthy",
+        "F",
+        41,
+        22.9,
+        5.4,
+        92,
+        7.2,
+        7.2,
+        _p(
+            ("b", "08:15", "dosa"),
+            ("l", "13:15", "rajma_rice"),
+            ("s", "17:30", "sprouts"),
+            ("d", "19:45", "roti_paneer"),
+        ),
+        walks=(("18:30", 25),),
+        lipids={"ldl": 104, "hdl": 55, "tg": 101},
+    ),
+    Spec(
+        "P-004",
+        "healthy",
+        "M",
+        25,
+        24.6,
+        5.2,
+        94,
+        6.0,
+        6.5,
+        _p(("b", "09:00", "upma"), ("l", "13:45", "biryani"), ("s", "17:00", "fruit"), ("d", "21:00", "chicken_rice")),
+        lipids={"ldl": 99, "hdl": 49, "tg": 118},
+    ),
+    Spec(
+        "P-005",
+        "prediabetes",
+        "M",
+        46,
+        26.8,
+        5.9,
+        104,
+        6.5,
+        6.6,
+        _p(
+            ("b", "08:30", "poha"),
+            ("l", "13:30", "rice_sambar"),
+            ("s", "17:15", "chai_samosa"),
+            ("d", "20:00", "chicken_rice"),
+        ),
+        comorbid=("dyslipidaemia",),
+        lipids={"ldl": 138, "hdl": 41, "tg": 176},
+    ),
+    Spec(
+        "P-006",
+        "prediabetes",
+        "F",
+        51,
+        27.5,
+        6.1,
+        108,
+        7.0,
+        7.0,
+        _p(("b", "08:00", "idli"), ("l", "13:00", "roti_dal"), ("s", "16:45", "fruit"), ("d", "20:00", "khichdi")),
+        walks=(("06:45", 30),),
+        comorbid=("hypothyroidism",),
+        lipids={"ldl": 126, "hdl": 50, "tg": 141},
+    ),
+    Spec(
+        "P-007",
+        "prediabetes",
+        "M",
+        39,
+        28.9,
+        6.0,
+        110,
+        6.2,
+        6.4,
+        _p(
+            ("b", "08:30", "dosa"),
+            ("l", "13:30", "biryani"),
+            ("s", "17:00", "chai_samosa"),
+            ("d", "19:30", "rice_heavy"),
+        ),
+        lipids={"ldl": 141, "hdl": 39, "tg": 192},
+    ),
+    Spec(
+        "P-008",
+        "prediabetes",
+        "F",
+        57,
+        25.9,
+        6.3,
+        112,
+        6.8,
+        7.0,
+        _p(
+            ("b", "08:00", "oats"),
+            ("l", "13:00", "rajma_rice"),
+            ("s", "17:00", "sprouts"),
+            ("d", "20:00", "roti_paneer"),
+        ),
+        walks=(("07:00", 20),),
+        comorbid=("hypertension",),
+        lipids={"ldl": 129, "hdl": 52, "tg": 150},
+    ),
+    Spec(
+        "P-009",
+        "t2d",
+        "M",
+        58,
+        29.4,
+        7.6,
+        148,
+        6.5,
+        6.8,
+        _p(
+            ("b", "08:30", "upma"),
+            ("l", "13:30", "rice_sambar"),
+            ("s", "17:00", "chai_samosa"),
+            ("d", "20:00", "chicken_rice"),
+        ),
+        meds=("metformin 500 mg BD",),
+        comorbid=("hypertension", "dyslipidaemia"),
+        lipids={"ldl": 132, "hdl": 38, "tg": 214},
+    ),
+    Spec(
+        "P-010",
+        "t2d",
+        "F",
+        54,
+        30.2,
+        8.4,
+        146,
+        5.5,
+        7.1,
+        _p(
+            ("b", "08:30", "idli"),
+            ("l", "13:30", "rice_sambar"),
+            ("s", "17:00", "chai_samosa"),
+            ("d", "20:00", "rice_heavy"),
+        ),
+        meds=("metformin 500 mg BD",),
+        comorbid=("hypertension",),
+        lipids={"ldl": 128, "hdl": 38, "tg": 210},
+    ),
+    Spec(
+        "P-011",
+        "t2d",
+        "M",
+        63,
+        26.1,
+        7.2,
+        138,
+        7.0,
+        7.0,
+        _p(("b", "08:00", "oats"), ("l", "13:00", "roti_dal"), ("s", "16:30", "fruit"), ("d", "20:30", "millet")),
+        walks=(("18:00", 30),),
+        meds=("metformin 1 g BD", "glimepiride 2 mg OD"),
+        comorbid=("CKD stage 2",),
+        lipids={"ldl": 110, "hdl": 44, "tg": 160},
+    ),
+    Spec(
+        "P-012",
+        "t2d",
+        "F",
+        49,
+        32.5,
+        9.1,
+        168,
+        6.0,
+        6.3,
+        _p(
+            ("b", "09:00", "poha"),
+            ("l", "14:00", "biryani"),
+            ("s", "17:30", "chai_samosa"),
+            ("d", "21:00", "rice_heavy"),
+        ),
+        meds=("metformin 1 g BD", "sitagliptin 100 mg OD"),
+        comorbid=("hypertension", "obesity"),
+        history_days=2,
+        lipids={"ldl": 151, "hdl": 35, "tg": 248},
+    ),
 )
 SPEC_BY_ID = {s.pid: s for s in SPECS}
 USUAL = {s.pid: {"sleep_hours_prev": s.usual_sleep, "walk_minutes": 25.0 if s.walks else 5.0} for s in SPECS}
@@ -263,14 +457,18 @@ def _build(spec: Spec) -> tuple[PatientProfile, pd.DataFrame, list[Meal]]:
     hr = 52 + 10 * mets + rng.normal(0, 2.5, n)
 
     meals = [
-        resolve_meal([{"food": f, "portion": p, "unit": u} for f, p, u in MEALS[tpl]],
-                     t=_at(hhmm).astimezone(UTC), label=f"{MEAL_LABELS[kind]}: {tpl.replace('_', ' ')}")
+        resolve_meal(
+            [{"food": f, "portion": p, "unit": u} for f, p, u in MEALS[tpl]],
+            t=_at(hhmm).astimezone(UTC),
+            label=f"{MEAL_LABELS[kind]}: {tpl.replace('_', ' ')}",
+        )
         for kind, hhmm, tpl in spec.plan
     ]
 
     phys = Physio(fpg=spec.fpg, hba1c=spec.hba1c, bmi=spec.bmi, sleep_h=spec.sleep_h, t2d=spec.cohort == "t2d")
-    meal_arr = np.array([[(m.t - grid[0].to_pydatetime()).total_seconds() / 60, m.gl, m.fibre_g, m.fat_g]
-                         for m in meals])
+    meal_arr = np.array(
+        [[(m.t - grid[0].to_pydatetime()).total_seconds() / 60, m.gl, m.fibre_g, m.fat_g] for m in meals]
+    )
     g, _ = model_curve(phys, tmin, meal_arr, mets)
 
     noise = np.zeros(n)
@@ -287,22 +485,51 @@ def _build(spec: Spec) -> tuple[PatientProfile, pd.DataFrame, list[Meal]]:
         missing = (grid >= pd.Timestamp(_at(a))) & (grid < pd.Timestamp(_at(b)))
     g = np.where(missing, np.nan, np.round(g, 1))
 
-    hist = pd.DataFrame({
-        "t": grid.tz_convert("UTC"), "glucose": g, "hr": np.round(hr, 1), "mets": np.round(mets, 2),
-        "sleep_proxy": asleep.astype(float), "missing_mask": missing,
-    })
+    hist = pd.DataFrame(
+        {
+            "t": grid.tz_convert("UTC"),
+            "glucose": g,
+            "hr": np.round(hr, 1),
+            "mets": np.round(mets, 2),
+            "sleep_proxy": asleep.astype(float),
+            "missing_mask": missing,
+        }
+    )
 
     k = int(spec.pid[2:])
     profile = PatientProfile(
-        patient_id=spec.pid, cohort=spec.cohort, age=spec.age, sex=spec.sex, bmi=spec.bmi,
-        hba1c=spec.hba1c, fasting_glucose=spec.fpg, lipids=spec.lipids, comorbidities=list(spec.comorbid),
+        patient_id=spec.pid,
+        cohort=spec.cohort,
+        age=spec.age,
+        sex=spec.sex,
+        bmi=spec.bmi,
+        hba1c=spec.hba1c,
+        fasting_glucose=spec.fpg,
+        lipids=spec.lipids,
+        comorbidities=list(spec.comorbid),
         genetic_risk_score=round(float(np.clip(rng.beta(2, 3) + 0.15 * (spec.cohort == "t2d"), 0, 1)), 2),
         medications=list(spec.meds),
-        pairing={"cgmacros_id": 100 + 3 * k, "match_distance": round(float(rng.uniform(0.15, 0.6)), 2),
-                 "match_on": ["status", "age", "bmi", "hba1c"], "note": "MOCK pairing"},
+        pairing={
+            "cgmacros_id": 100 + 3 * k,
+            "match_distance": round(float(rng.uniform(0.15, 0.6)), 2),
+            "match_on": ["status", "age", "bmi", "hba1c"],
+            "note": "MOCK pairing",
+        },
         history_days=spec.history_days,
-        provenance={f: Provenance.MOCK for f in ("age", "sex", "bmi", "hba1c", "fasting_glucose", "lipids",
-                                                   "comorbidities", "medications", "pairing")}
+        provenance={
+            f: Provenance.MOCK
+            for f in (
+                "age",
+                "sex",
+                "bmi",
+                "hba1c",
+                "fasting_glucose",
+                "lipids",
+                "comorbidities",
+                "medications",
+                "pairing",
+            )
+        }
         | {"genetic_risk_score": Provenance.SYNTHETIC},
     )
     return profile, hist, meals

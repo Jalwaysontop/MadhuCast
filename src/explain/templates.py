@@ -44,8 +44,10 @@ FEATURE_REGISTRY: dict[str, FeatureSpec] = {
     "glucose_slope_30m": FeatureSpec("Glucose trend, last 30 min", "mg/dL/min", "Recent glucose", 1, 0.0),
 }
 
-FALLBACK = ("Feature attributions are not available for this forecast, so no explanation is shown. "
-            "The forecast and its uncertainty band are still valid model estimates.")
+FALLBACK = (
+    "Feature attributions are not available for this forecast, so no explanation is shown. "
+    "The forecast and its uncertainty band are still valid model estimates."
+)
 CAPTION = "Explains the model, not the biology."
 ATTENTION_CAPTION = "Attention weights are a directional indicator, not a rigorous attribution."
 MIN_EFFECT = 1.0  # mg/dL; smaller attributions are reported as "little effect"
@@ -96,12 +98,13 @@ def fmt_pct(p: float) -> str:
 
 
 def risk_sentence(fc: Forecast) -> str:
-    return (f"Estimated chance of glucose above 180 mg/dL within 2 hours: {fmt_pct(fc.spike_prob)}; "
-            f"below 70 mg/dL: {fmt_pct(fc.hypo_prob)} (model estimate, confidence {fmt_pct(fc.confidence)}).")
+    return (
+        f"Estimated chance of glucose above 180 mg/dL within 2 hours: {fmt_pct(fc.spike_prob)}; "
+        f"below 70 mg/dL: {fmt_pct(fc.hypo_prob)} (model estimate, confidence {fmt_pct(fc.confidence)})."
+    )
 
 
-def contributor_sentence(key: str, shap: float, value: float | None = None,
-                         baseline: float | None = None) -> str:
+def contributor_sentence(key: str, shap: float, value: float | None = None, baseline: float | None = None) -> str:
     s = spec(key)
     if abs(shap) < MIN_EFFECT:
         subject = f"{s.label} ({fmt_value(key, value)})" if value is not None else s.label
@@ -130,8 +133,9 @@ def explain(fc: Forecast, k: int = 3) -> list[str]:
     return [contributor_sentence(key, v, vals.get(key), base.get(key)) for key, v in top]
 
 
-def counterfactual_sentence(alternative: str, base_peak_band: tuple[float, float],
-                            alt_peak_band: tuple[float, float], d_peak: float) -> str:
+def counterfactual_sentence(
+    alternative: str, base_peak_band: tuple[float, float], alt_peak_band: tuple[float, float], d_peak: float
+) -> str:
     """d_peak = scenario − baseline. The range is a conservative band difference (80% bands
     at each peak, treated as independent), so it is wide on purpose."""
     diff = -d_peak  # how much higher the current meal is than the alternative
@@ -139,8 +143,10 @@ def counterfactual_sentence(alternative: str, base_peak_band: tuple[float, float
     if round_mgdl(diff) == 0:
         return f"Compared with {alternative}, the predicted peak is about the same."
     verb = "raise" if diff > 0 else "lower"
-    return (f"Compared with {alternative}, this plan is predicted to {verb} peak glucose by "
-            f"~{round_mgdl(diff)} mg/dL (80% range {lo:+.0f} to {hi:+.0f} mg/dL).")
+    return (
+        f"Compared with {alternative}, the current plan is predicted to {verb} peak glucose by "
+        f"~{round_mgdl(diff)} mg/dL (80% range {lo:+.0f} to {hi:+.0f} mg/dL)."
+    )
 
 
 # --------------------------------------------------------------------------- reliability check
@@ -168,8 +174,9 @@ def _lever_scenario(key: str, value: float | None, meal_index: int | None) -> tu
     return None
 
 
-def agreement_check(state: PatientState, fc: Forecast, run: Callable[[PatientState, Scenario], Forecast],
-                    k: int = 3) -> list[Agreement]:
+def agreement_check(
+    state: PatientState, fc: Forecast, run: Callable[[PatientState, Scenario], Forecast], k: int = 3
+) -> list[Agreement]:
     """For the top-k attributed *levers*, run the matching what-if (which increases the
     feature) and check the sign of the peak change against the attribution's implied
     direction: sign(shap) × sign(value − reference)."""

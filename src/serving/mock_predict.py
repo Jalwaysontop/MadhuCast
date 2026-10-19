@@ -10,8 +10,9 @@
   decays slowly (~6 h), and the residual's 30-min slope is extrapolated (damped). This
   lets the mock follow drifts it does not model (P-011's evening decline).
 
-Attributions are finite-difference perturbations of this same function, so the mock's
-explanations are faithful by construction: a ground truth for testing templates.
+Attributions are finite-difference perturbations through this same pipeline (including the
+re-anchoring a what-if goes through), so the mock's explanations are faithful by construction:
+a ground truth for testing templates and the attribution/what-if agreement check.
 Output provenance is MOCK. This is NOT a clinical model.
 """
 
@@ -118,8 +119,13 @@ def build_inputs(state: PatientState) -> Inputs:
     meals = np.array([[(m.t - now).total_seconds() / 60, m.gl, m.fibre_g, m.fat_g] for m in state.meals])
     sleep = ts.prior_sleep_hours(state.history, now)
     pr = state.profile
-    phys = Physio(fpg=pr.fasting_glucose, hba1c=pr.hba1c, bmi=pr.bmi,
-                  sleep_h=sleep if sleep is not None else REF["sleep_hours_prev"], t2d=pr.cohort == "t2d")
+    phys = Physio(
+        fpg=pr.fasting_glucose,
+        hba1c=pr.hba1c,
+        bmi=pr.bmi,
+        sleep_h=sleep if sleep is not None else REF["sleep_hours_prev"],
+        t2d=pr.cohort == "t2d",
+    )
     dq = state.data_quality if state.data_quality is not None else ts.data_quality(state.history, now)
     return Inputs(phys, t, meals.reshape(-1, 4), mets, obs, dq, ts.stale_minutes(state.history, now))
 
@@ -164,18 +170,28 @@ def _without_meals(inp: Inputs, col: int) -> Inputs:
 # --------------------------------------------------------------------------- predict
 
 
+def _peak_reanchored(inp: Inputs) -> float:
+    """Peak exactly as predict() would compute it for these inputs (anchor recomputed)."""
+    g, _ = model_curve(inp.phys, inp.t, inp.meals, inp.mets)
+    r, s = _anchor(inp, g)
+    return _peak(inp, r, s)
+
+
 def _attributions(inp: Inputs, r: float, s: float) -> dict[str, float]:
+    """Model-input features are perturbed through the full pipeline (re-anchored to observed
+    glucose, as a what-if is), so attributions match what-if behaviour. The two anchor
+    features are perturbed directly."""
     base = _peak(inp, r, s)
     near = (inp.meals[:, 0] >= -180) & (inp.meals[:, 0] <= HORIZON) if len(inp.meals) else np.array([], bool)
-    window = (inp.t >= -180)
+    window = inp.t >= -180
     perturbed: dict[str, float] = {
-        "meal_gl": _peak(_without_meals(inp, 1), r, s) if near.any() else base,
-        "meal_fibre": _peak(_without_meals(inp, 2), r, s) if near.any() else base,
-        "meal_fat": _peak(_without_meals(inp, 3), r, s) if near.any() else base,
-        "walk_minutes": _peak(replace(inp, mets=np.where(window, np.minimum(inp.mets, 1.3), inp.mets)), r, s),
-        "sleep_hours_prev": _peak(replace(inp, phys=replace(inp.phys, sleep_h=REF["sleep_hours_prev"])), r, s),
-        "hba1c": _peak(replace(inp, phys=replace(inp.phys, hba1c=REF["hba1c"])), r, s),
-        "bmi": _peak(replace(inp, phys=replace(inp.phys, bmi=REF["bmi"])), r, s),
+        "meal_gl": _peak_reanchored(_without_meals(inp, 1)) if near.any() else base,
+        "meal_fibre": _peak_reanchored(_without_meals(inp, 2)) if near.any() else base,
+        "meal_fat": _peak_reanchored(_without_meals(inp, 3)) if near.any() else base,
+        "walk_minutes": _peak_reanchored(replace(inp, mets=np.where(window, np.minimum(inp.mets, 1.3), inp.mets))),
+        "sleep_hours_prev": _peak_reanchored(replace(inp, phys=replace(inp.phys, sleep_h=REF["sleep_hours_prev"]))),
+        "hba1c": _peak_reanchored(replace(inp, phys=replace(inp.phys, hba1c=REF["hba1c"]))),
+        "bmi": _peak_reanchored(replace(inp, phys=replace(inp.phys, bmi=REF["bmi"]))),
         "glucose_now": _peak(inp, 0.0, s),
         "glucose_slope_30m": _peak(inp, r, 0.0),
     }
@@ -188,9 +204,13 @@ def _feature_values(state: PatientState, inp: Inputs) -> dict[str, float]:
     past_meals = inp.meals[inp.meals[:, 0] <= 0, 0] if len(inp.meals) else np.array([])
     walk = float(((inp.mets >= 2.5) & (inp.t >= -180)).sum() * ts.STEP_MIN)
     out = {
-        "meal_gl": float(m[:, 1].sum()), "meal_fibre": float(m[:, 2].sum()), "meal_fat": float(m[:, 3].sum()),
-        "walk_minutes": walk, "sleep_hours_prev": inp.phys.sleep_h,
-        "hba1c": inp.phys.hba1c, "bmi": inp.phys.bmi,
+        "meal_gl": float(m[:, 1].sum()),
+        "meal_fibre": float(m[:, 2].sum()),
+        "meal_fat": float(m[:, 3].sum()),
+        "walk_minutes": walk,
+        "sleep_hours_prev": inp.phys.sleep_h,
+        "hba1c": inp.phys.hba1c,
+        "bmi": inp.phys.bmi,
         "mets_1h": float(np.nanmean(inp.mets[(inp.t > -60) & (inp.t <= 0)])),
     }
     if len(past_meals):
@@ -243,9 +263,17 @@ def predict(state: PatientState, scenario: Scenario | None = None, *, explain: b
     hypo = float(np.max(norm.cdf((HYPO_THRESHOLD - q50) / sd)))
     conf = float(np.clip((1 - 2 * hw[-1] / 200) * inp.dq, 0, 1))
 
-    traj = [{"t_min": int(t), "q05": round(a, 1), "q10": round(b, 1), "q50": round(c, 1),
-             "q90": round(d, 1), "q95": round(e, 1)}
-            for t, a, b, c, d, e in zip(h, q05, q10, q50, q90, q95)]
+    traj = [
+        {
+            "t_min": int(t),
+            "q05": round(a, 1),
+            "q10": round(b, 1),
+            "q50": round(c, 1),
+            "q90": round(d, 1),
+            "q95": round(e, 1),
+        }
+        for t, a, b, c, d, e in zip(h, q05, q10, q50, q90, q95)
+    ]
     at = {int(t): i for i, t in enumerate(h)}
 
     def hz(m: int) -> tuple[float, float, float]:
@@ -258,8 +286,12 @@ def predict(state: PatientState, scenario: Scenario | None = None, *, explain: b
         g_now < HYPO_THRESHOLD or g_now > 300 or (g_now < 90 and slope is not None and slope < -1.5)
     )
     fc: dict[str, Any] = dict(
-        glucose_30=hz(30), glucose_60=hz(60), glucose_120=hz(120),
-        spike_prob=round(spike, 3), hypo_prob=round(hypo, 3), confidence=round(conf, 3),
+        glucose_30=hz(30),
+        glucose_60=hz(60),
+        glucose_120=hz(120),
+        spike_prob=round(spike, 3),
+        hypo_prob=round(hypo, 3),
+        confidence=round(conf, 3),
         trajectory=traj,
         quantiles_90={str(m): (round(float(q05[at[m]]), 1), round(float(q95[at[m]]), 1)) for m in (30, 60, 120)},
         detector_flags={
@@ -267,7 +299,8 @@ def predict(state: PatientState, scenario: Scenario | None = None, *, explain: b
             "classifier": bool(spike >= 0.5 or hypo >= 0.3),
             "rule_net": bool(rule_net),
         },
-        model_version=MODEL_VERSION, feature_lib_version=FEATURE_LIB_VERSION,
+        model_version=MODEL_VERSION,
+        feature_lib_version=FEATURE_LIB_VERSION,
         provenance=Provenance.MOCK,
     )
     if explain:
@@ -286,11 +319,15 @@ def predict(state: PatientState, scenario: Scenario | None = None, *, explain: b
 def _mock_eval_summary() -> dict:
     return {
         "note": "MOCK placeholder values, not results. Replaced by P2's scripts/evaluate.py output.",
-        "horizons": {"30": {"rmse": [21.4, 18.9, 24.2], "mae": [15.2, 13.4, 17.1]},
-                     "60": {"rmse": [31.8, 28.1, 35.9], "mae": [23.0, 20.3, 25.8]},
-                     "120": {"rmse": [41.5, 36.2, 47.3], "mae": [30.9, 27.0, 35.1]}},
-        "event": {"spike": {"recall": 0.81, "pr_auc": 0.62, "f2": 0.71},
-                  "hypo": {"recall": 0.74, "pr_auc": 0.41, "f2": 0.58}},
+        "horizons": {
+            "30": {"rmse": [21.4, 18.9, 24.2], "mae": [15.2, 13.4, 17.1]},
+            "60": {"rmse": [31.8, 28.1, 35.9], "mae": [23.0, 20.3, 25.8]},
+            "120": {"rmse": [41.5, 36.2, 47.3], "mae": [30.9, 27.0, 35.1]},
+        },
+        "event": {
+            "spike": {"recall": 0.81, "pr_auc": 0.62, "f2": 0.71},
+            "hypo": {"recall": 0.74, "pr_auc": 0.41, "f2": 0.58},
+        },
         "lead_time_min": {"median": 35, "p25": 20},
         "false_alarms_per_patient_day": 1.6,
         "coverage": {"80": 0.77, "90": 0.87},
@@ -302,8 +339,12 @@ def _mock_eval_summary() -> dict:
 def _mock_ablation() -> pd.DataFrame:
     rows = []
     spec = {  # variant: (rmse_60, ci_halfwidth, recall_spike)
-        "glucose_only": (34.6, 3.9, 0.74), "ehr_only": (47.2, 5.1, 0.52), "wearable_only": (33.9, 3.8, 0.75),
-        "concat": (32.7, 3.7, 0.78), "film": (31.8, 3.6, 0.80), "film_physics": (31.2, 3.5, 0.81),
+        "glucose_only": (34.6, 3.9, 0.74),
+        "ehr_only": (47.2, 5.1, 0.52),
+        "wearable_only": (33.9, 3.8, 0.75),
+        "concat": (32.7, 3.7, 0.78),
+        "film": (31.8, 3.6, 0.80),
+        "film_physics": (31.2, 3.5, 0.81),
     }
     for v, (rmse, hwid, rec) in spec.items():
         rows.append((v, "rmse_60", rmse, rmse - hwid, rmse + hwid, 45))
@@ -334,8 +375,11 @@ def _mock_clarke() -> pd.DataFrame:
 def mock_thresholds() -> dict:
     return {
         "calibrated": False,
-        "strata": {"low": {"spike": 0.50, "hypo": 0.35}, "mid": {"spike": 0.45, "hypo": 0.30},
-                   "high": {"spike": 0.40, "hypo": 0.25}},
+        "strata": {
+            "low": {"spike": 0.50, "hypo": 0.35},
+            "mid": {"spike": 0.45, "hypo": 0.30},
+            "high": {"spike": 0.40, "hypo": 0.25},
+        },
         "confidence_gate": 0.5,
         "stratum_rule": "low = healthy, mid = prediabetes, high = T2D (placeholder, not chosen on validation)",
     }
@@ -346,8 +390,12 @@ def _mock_whatif_sanity() -> pd.DataFrame:
     """Directional tests computed live on the mock cohort at the demo time."""
     from src.serving import backend, mock_data
 
-    tests: dict[str, list[bool]] = {"more_carbs_raises_peak": [], "walk_lowers_peak": [],
-                                    "short_sleep_raises_peak": [], "millet_swap_lowers_peak": []}
+    tests: dict[str, list[bool]] = {
+        "more_carbs_raises_peak": [],
+        "walk_lowers_peak": [],
+        "short_sleep_raises_peak": [],
+        "millet_swap_lowers_peak": [],
+    }
     for pid in mock_data.list_patients():
         st = mock_data.get_state(pid, mock_data.DEMO_NOW - timedelta(minutes=0))
         if not st.meals:
@@ -364,10 +412,17 @@ def _mock_whatif_sanity() -> pd.DataFrame:
         tests["short_sleep_raises_peak"].append(peak(Scenario(prior_sleep_hours=5)) >= base)
         items = st.meals[idx].items or []
         if any("rice" in i["food"] for i in items):
-            swapped = [({"food": "millet roti (bajra)", "portion": 2 * i["portion"], "unit": "piece"}
-                        if "rice" in i["food"] else i) for i in items]
+            swapped = [
+                (
+                    {"food": "millet roti (bajra)", "portion": 2 * i["portion"], "unit": "piece"}
+                    if "rice" in i["food"]
+                    else i
+                )
+                for i in items
+            ]
             tests["millet_swap_lowers_peak"].append(
-                peak(Scenario(meal_swap={"meal_index": idx, "items": swapped})) < base)
+                peak(Scenario(meal_swap={"meal_index": idx, "items": swapped})) < base
+            )
     rows = [(k, int(sum(v)), len(v), round(sum(v) / len(v), 3) if v else float("nan")) for k, v in tests.items()]
     return pd.DataFrame(rows, columns=["test", "passed", "n_cases", "pass_rate"])
 

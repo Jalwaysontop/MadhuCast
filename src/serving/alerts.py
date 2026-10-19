@@ -62,9 +62,13 @@ class AlertInput:
     @classmethod
     def from_state(cls, state: PatientState, fc: Forecast) -> AlertInput:
         return cls(
-            patient_id=state.profile.patient_id, cohort=state.profile.cohort, now=state.now, forecast=fc,
+            patient_id=state.profile.patient_id,
+            cohort=state.profile.cohort,
+            now=state.now,
+            forecast=fc,
             glucose_now=ts.glucose_now(state.history, state.now),
-            data_quality=state.data_quality, stale_min=ts.stale_minutes(state.history, state.now),
+            data_quality=state.data_quality,
+            stale_min=ts.stale_minutes(state.history, state.now),
         )
 
 
@@ -128,20 +132,26 @@ def stratum(cohort: str) -> str:
 def _lead(fc: Forecast, event: str, curve) -> tuple[int | None, str]:
     """Earliest predicted crossing: q50 first, then the band edge; else a horizon bucket."""
     if event == "spike":
-        t = ts.first_crossing(curve, "q50", 180, above=True) or ts.first_crossing(curve, "q90", 180, above=True)
+        t = ts.first_crossing(curve, "q50", 180, above=True)
+        if t is None:
+            t = ts.first_crossing(curve, "q90", 180, above=True)
     else:
-        t = ts.first_crossing(curve, "q50", HYPO_THRESHOLD, above=False) or ts.first_crossing(
-            curve, "q10", HYPO_THRESHOLD, above=False)
+        t = ts.first_crossing(curve, "q50", HYPO_THRESHOLD, above=False)
+        if t is None:
+            t = ts.first_crossing(curve, "q10", HYPO_THRESHOLD, above=False)
     if t is None:
         return None, "≤120 min"
+    if t == 0:
+        return 0, "now"
     if fc.trajectory:
         return t, f"~{t} min"
     bucket = next(b for b in (30, 60, 120) if t <= b)
     return t, f"≤{bucket} min"
 
 
-def evaluate(inp: AlertInput, thresholds: dict, cfg: AlertConfig = AlertConfig(),
-             recently_high_risk: bool = False) -> list[Candidate]:
+def evaluate(
+    inp: AlertInput, thresholds: dict, cfg: AlertConfig = AlertConfig(), recently_high_risk: bool = False
+) -> list[Candidate]:
     fc = inp.forecast
     thr = thresholds["strata"][stratum(inp.cohort)]
     gate = float(thresholds.get("confidence_gate", 0.5))
@@ -153,8 +163,21 @@ def evaluate(inp: AlertInput, thresholds: dict, cfg: AlertConfig = AlertConfig()
 
     def cand(event: str, tier: Tier, prob: float | None, reason: str) -> Candidate:
         lead_min, lead_label = _lead(fc, event, curve) if event != "unknown" else (None, "now")
-        return Candidate(inp.patient_id, inp.cohort, event, tier, prob, fc.confidence, lead_min, lead_label,
-                         fired, inp.data_quality, fc.model_version, reason)
+        detectors = ("stale_stream",) if event == "unknown" else fired
+        return Candidate(
+            inp.patient_id,
+            inp.cohort,
+            event,
+            tier,
+            prob,
+            fc.confidence,
+            lead_min,
+            lead_label,
+            detectors,
+            inp.data_quality,
+            fc.model_version,
+            reason,
+        )
 
     # ---- hypo (recall-first: never suppressed by confidence)
     q10_30 = curve.loc[curve["t_min"] <= 30, "q10"].min()
@@ -177,15 +200,22 @@ def evaluate(inp: AlertInput, thresholds: dict, cfg: AlertConfig = AlertConfig()
     elif fc.spike_prob >= thr["spike"]:
         tier = Tier.WARNING if fc.confidence >= gate else Tier.WATCH
         note = "" if tier == Tier.WARNING else " (low confidence: WATCH)"
-        out.append(cand("spike", tier, fc.spike_prob, f"spike probability {fc.spike_prob:.0%} ≥ {thr['spike']:.0%}{note}"))
+        out.append(
+            cand("spike", tier, fc.spike_prob, f"spike probability {fc.spike_prob:.0%} ≥ {thr['spike']:.0%}{note}")
+        )
 
     # ---- stale stream → UNKNOWN, never low risk
     if inp.stale_min >= cfg.stale_min:
-        high = recently_high_risk or stratum(inp.cohort) == "high" or any(
-            c.tier >= Tier.WARNING for c in out)
+        high = recently_high_risk or stratum(inp.cohort) == "high" or any(c.tier >= Tier.WARNING for c in out)
         stale_txt = "no CGM data" if inp.stale_min == float("inf") else f"no CGM data for {inp.stale_min:.0f} min"
-        out.append(cand("unknown", Tier.CRITICAL if high else Tier.WARNING, None,
-                        f"{stale_txt}; risk cannot be assessed" + (" (recently high risk)" if high else "")))
+        out.append(
+            cand(
+                "unknown",
+                Tier.CRITICAL if high else Tier.WARNING,
+                None,
+                f"{stale_txt}; risk cannot be assessed" + (" (recently high risk)" if high else ""),
+            )
+        )
     return out
 
 
@@ -209,8 +239,9 @@ class AlertBook:
         t = self.last_high_risk.get(pid)
         return t is not None and now - t <= timedelta(minutes=self.cfg.recent_high_risk_min)
 
-    def update(self, now: datetime, candidates: Iterable[Candidate],
-               evaluated: Iterable[str] | None = None) -> list[Alert]:
+    def update(
+        self, now: datetime, candidates: Iterable[Candidate], evaluated: Iterable[str] | None = None
+    ) -> list[Alert]:
         """Apply one evaluation round. ``evaluated`` lists patients assessed this round; their
         active episodes with no candidate resolve. Defaults to the candidates' patients."""
         cands = {(c.patient_id, c.event): c for c in candidates}
@@ -253,11 +284,24 @@ class AlertBook:
                 self.suppressed += 1
                 continue
             a = Alert(
-                id=f"{c.patient_id}-{c.event}-{now.astimezone(ts.IST):%Y%m%d%H%M}", patient_id=c.patient_id,
-                cohort=c.cohort, event=c.event, tier=tier, probability=c.probability, confidence=c.confidence,
-                lead_min=c.lead_min, lead_label=c.lead_label, detectors=c.detectors, data_quality=c.data_quality,
-                model_version=c.model_version, reason=c.reason, opened_at=now, updated_at=now,
-                horizon_min=c.horizon_min, max_tier=tier, escalated=escalated,
+                id=f"{c.patient_id}-{c.event}-{now.astimezone(ts.IST):%Y%m%d%H%M}",
+                patient_id=c.patient_id,
+                cohort=c.cohort,
+                event=c.event,
+                tier=tier,
+                probability=c.probability,
+                confidence=c.confidence,
+                lead_min=c.lead_min,
+                lead_label=c.lead_label,
+                detectors=c.detectors,
+                data_quality=c.data_quality,
+                model_version=c.model_version,
+                reason=c.reason,
+                opened_at=now,
+                updated_at=now,
+                horizon_min=c.horizon_min,
+                max_tier=tier,
+                escalated=escalated,
             )
             self.active[key] = a
             self.history.append(a)
@@ -269,8 +313,9 @@ class AlertBook:
 
 def sort_queue(alerts: Iterable[Alert]) -> list[Alert]:
     """Tier desc, then lead time asc (unknown lead last), then probability desc."""
-    return sorted(alerts, key=lambda a: (-int(a.tier), a.lead_min if a.lead_min is not None else 10_000,
-                                         -(a.probability or 0)))
+    return sorted(
+        alerts, key=lambda a: (-int(a.tier), a.lead_min if a.lead_min is not None else 10_000, -(a.probability or 0))
+    )
 
 
 # --------------------------------------------------------------------------- burden
@@ -296,10 +341,15 @@ def burden(book: AlertBook, n_patients: int, window_hours: float) -> Burden:
     critical = sum(a.max_tier == Tier.CRITICAL for a in eps)
     per = len(eps) / patient_days
     return Burden(
-        episodes=len(eps), actionable=actionable, critical=critical, patient_days=round(patient_days, 2),
-        per_patient_day=round(per, 2), actionable_per_patient_day=round(actionable / patient_days, 2),
+        episodes=len(eps),
+        actionable=actionable,
+        critical=critical,
+        patient_days=round(patient_days, 2),
+        per_patient_day=round(per, 2),
+        actionable_per_patient_day=round(actionable / patient_days, 2),
         critical_share=round(critical / len(eps), 3) if eps else 0.0,
-        within_budget=per <= book.cfg.budget_per_patient_day, suppressed=book.suppressed,
+        within_budget=per <= book.cfg.budget_per_patient_day,
+        suppressed=book.suppressed,
     )
 
 
@@ -313,9 +363,14 @@ class Snapshot:
     burden: Burden
 
 
-def replay(times: list[datetime], patients: list[str], get_state: Callable[[str, datetime], PatientState],
-           predict: Callable[[PatientState], Forecast], thresholds: dict,
-           cfg: AlertConfig = AlertConfig()) -> list[Snapshot]:
+def replay(
+    times: list[datetime],
+    patients: list[str],
+    get_state: Callable[[str, datetime], PatientState],
+    predict: Callable[[PatientState], Forecast],
+    thresholds: dict,
+    cfg: AlertConfig = AlertConfig(),
+) -> list[Snapshot]:
     """Scrub ``now`` through ``times``, evaluating every patient each step."""
     book = AlertBook(cfg=cfg)
     snaps: list[Snapshot] = []

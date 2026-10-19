@@ -1,0 +1,4 @@
+# file: /Users/aadvikchaturvedi/digital_twin/dashboard/components/health.py
+# hypothesis_version: 6.140.0
+
+[3600, ', ', ':material/download:', ':material/report:', ':material/thumb_up:', '? UNKNOWN', 'Age', 'CGM', 'False alarm', 'Gaps in last 4 h: ', 'Last sample', 'Missed event', 'Request raw window', 'Status', 'Stream', 'Useful', 'Wearable (HR / METs)', 'cgm', 'false_alarm', 'health', 'missed_event', 'n/a', 'never', 'none', 'now', 'request_raw_window', 'stretch', 'useful', 'wearable', 'window_min', '✅', '✓ FRESH', '📝']

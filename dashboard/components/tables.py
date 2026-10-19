@@ -34,22 +34,52 @@ def ablation_pivot(df: pd.DataFrame) -> pd.DataFrame:
     return out.reset_index()
 
 
-PROVENANCE_REGISTER = pd.DataFrame([
-    {"Dataset": "CGMacros (CGM, Fitbit HR/METs, meal macros)", "Role": "Dynamic stream", "Provenance": "REAL",
-     "Licence": "VERIFY: one paper reports CC BY-NC-SA 4.0",
-     "Caveat": "NonCommercial clause: confirm prize/commercial implications. ~45 participants."},
-    {"Dataset": "Synthea (simulated EHR)", "Role": "Static stream", "Provenance": "SYNTHETIC", "Licence": "Apache-2.0",
-     "Caveat": "Simulated patients. Paired to CGMacros by nearest neighbour, not the same person."},
-    {"Dataset": "Genetic risk score", "Role": "Static feature", "Provenance": "SYNTHETIC",
-     "Licence": "Generated in-project", "Caveat": "No genotype data used anywhere."},
-    {"Dataset": "Indian meal augmentation + food table (IFCT/INDB-derived)", "Role": "Meals / what-if",
-     "Provenance": "SYNTHETIC", "Licence": "VERIFY IFCT/INDB terms",
-     "Caveat": "150–250 items: table stakes, done openly. Assumption-flagged rows are marked ⚠."},
-    {"Dataset": "Sleep signal", "Role": "Dynamic feature", "Provenance": "SYNTHETIC",
-     "Licence": "Derived", "Caveat": "Proxy from night METs and HR, not measured sleep."},
-    {"Dataset": "MOCK cohort (this repo)", "Role": "Dev/demo until integration", "Provenance": "MOCK",
-     "Licence": "Apache-2.0", "Caveat": "Seeded placeholder. Never presented as results."},
-])
+PROVENANCE_REGISTER = pd.DataFrame(
+    [
+        {
+            "Dataset": "CGMacros (CGM, Fitbit HR/METs, meal macros)",
+            "Role": "Dynamic stream",
+            "Provenance": "REAL",
+            "Licence": "VERIFY: one paper reports CC BY-NC-SA 4.0",
+            "Caveat": "NonCommercial clause: confirm prize/commercial implications. ~45 participants.",
+        },
+        {
+            "Dataset": "Synthea (simulated EHR)",
+            "Role": "Static stream",
+            "Provenance": "SYNTHETIC",
+            "Licence": "Apache-2.0",
+            "Caveat": "Simulated patients. Paired to CGMacros by nearest neighbour, not the same person.",
+        },
+        {
+            "Dataset": "Genetic risk score",
+            "Role": "Static feature",
+            "Provenance": "SYNTHETIC",
+            "Licence": "Generated in-project",
+            "Caveat": "No genotype data used anywhere.",
+        },
+        {
+            "Dataset": "Indian meal augmentation + food table (IFCT/INDB-derived)",
+            "Role": "Meals / what-if",
+            "Provenance": "SYNTHETIC",
+            "Licence": "VERIFY IFCT/INDB terms",
+            "Caveat": "150–250 items: table stakes, done openly. Assumption-flagged rows are marked ⚠.",
+        },
+        {
+            "Dataset": "Sleep signal",
+            "Role": "Dynamic feature",
+            "Provenance": "SYNTHETIC",
+            "Licence": "Derived",
+            "Caveat": "Proxy from night METs and HR, not measured sleep.",
+        },
+        {
+            "Dataset": "MOCK cohort (this repo)",
+            "Role": "Dev/demo until integration",
+            "Provenance": "MOCK",
+            "Licence": "Apache-2.0",
+            "Caveat": "Seeded placeholder. Never presented as results.",
+        },
+    ]
+)
 
 LIMITATIONS = [
     "The pairing is synthetic: EHR records are matched to CGM participants, not observed together.",

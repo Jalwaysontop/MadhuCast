@@ -18,7 +18,7 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-CONTRACT_VERSION = "0.1.0"
+CONTRACT_VERSION = "0.1.1"
 
 GLUCOSE_MIN, GLUCOSE_MAX = 20.0, 600.0  # physiological sanity bounds for rejection
 SPIKE_THRESHOLD, HYPO_THRESHOLD = 180.0, 70.0
@@ -244,8 +244,18 @@ REPORT_CSV_COLUMNS: dict[str, tuple[str, ...]] = {
 }
 
 FOOD_DB_COLUMNS = (
-    "food", "portion_unit", "grams_per_unit", "carbs_g", "protein_g", "fat_g",
-    "fibre_g", "gi", "gl_per_unit", "source", "licence", "assumption_flag",
+    "food",
+    "portion_unit",
+    "grams_per_unit",
+    "carbs_g",
+    "protein_g",
+    "fat_g",
+    "fibre_g",
+    "gi",
+    "gl_per_unit",
+    "source",
+    "licence",
+    "assumption_flag",
 )
 
 

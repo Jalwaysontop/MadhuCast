@@ -1,0 +1,28 @@
+# Shared requirements. P1 (dashboard, FHIR, tests) pins below; P2/P3 add theirs in their own section.
+# Python >= 3.11 (developed on 3.13).
+
+# ---- core / serving (P1)
+pydantic==2.13.4
+pandas==3.0.3
+numpy==2.4.6
+scipy==1.16.2          # 1.15.3 wheels fail to load on recent macOS (see docs/decisions.md ADR-012)
+pyarrow==23.0.1        # parquet time series from P3
+
+# ---- dashboard (P1)
+streamlit==1.56.0
+plotly==6.3.0
+kaleido==1.1.0         # Plotly -> PNG for docs/figures (needs a local Chrome/Chromium)
+matplotlib==3.10.8     # architecture / privacy diagrams as code
+
+# ---- FHIR export (P1): R4B models, see ADR-002
+fhir.resources==8.1.0
+
+# ---- tests / quality (P1)
+pytest==8.4.2
+hypothesis==6.140.0
+ruff==0.13.0
+black==25.9.0
+
+# ---- P2 (model) ----
+
+# ---- P3 (data) ----

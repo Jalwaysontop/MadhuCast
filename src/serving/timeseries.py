@@ -149,6 +149,16 @@ def forecast_curve(fc: Forecast, glucose_at_now: float | None = None) -> pd.Data
     """
     if fc.trajectory:
         df = pd.DataFrame([p.model_dump() for p in fc.trajectory])
+        if glucose_at_now is not None and int(df["t_min"].min()) > 0:
+            anchor = {
+                "t_min": 0,
+                "q05": glucose_at_now,
+                "q10": glucose_at_now,
+                "q50": glucose_at_now,
+                "q90": glucose_at_now,
+                "q95": glucose_at_now,
+            }
+            df = pd.concat([pd.DataFrame([anchor]), df], ignore_index=True)
         interpolated = False
     else:
         knots_t = [30, 60, 120]

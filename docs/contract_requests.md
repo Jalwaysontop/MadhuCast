@@ -1,6 +1,6 @@
 # Contract requests (Person 1 → Person 2, Person 3)
 
-Source of truth: `src/contracts.py` (contract version **0.1.0**). This page explains it in plain terms.
+Source of truth: `src/contracts.py` (contract version **0.1.1**). This page explains it in plain terms.
 Everything marked *requested addition* is **Optional**. The dashboard works without it, just with less detail.
 Reply in this file or in chat. Person 1 will not edit your files.
 
@@ -102,6 +102,23 @@ Requested additions (Optional, in priority order):
 
 If a file is missing, the trust page shows "not yet available". On mock, it shows mock values labelled MOCK.
 
+Notes on `whatif_sanity.csv`:
+- `passed` is a **count** of passing cases, not a bool.
+- Expected tests (the mock already computes these live, so they double as a reference):
+  - `more_carbs_raises_peak`
+  - `walk_lowers_peak`
+  - `short_sleep_raises_peak`
+  - `millet_swap_lowers_peak`
+
+### R2.3 Planned activity and planned meals (contract 0.1.1, additive)
+- `PatientState.planned_activity: list[ActivityBlock]` holds future bouts, each with `start`, `minutes`, `mets` (3.5 for a brisk walk) and `kind`. This is how the post-meal-walk lever reaches the model.
+- `PatientState.meals` may include meals with `t > now` (a later meal time is a *planned* meal).
+- If your model can't use either, say so. The walk/meal-time levers then fall back to "no effect" on the real model, and the sanity test will show it.
+
+### R2.4 Attribution semantics
+- Please attribute the **predicted 2-hour peak** (max of q50 over the horizon) or say what output you attribute, so the template wording stays correct.
+- The trust page runs an attribution ↔ what-if sign-agreement check. Attributions computed against a fixed anchor tend to disagree with what-if re-anchoring (we hit this on the mock; see ADR-013).
+
 ---
 
 ## Integration gate
@@ -111,3 +128,5 @@ If a file is missing, the trust page shows "not yet available". On mock, it show
 | Date | From | Item | Status |
 |---|---|---|---|
 | 2026-10-19 | P1 | Contract v0.1.0 circulated | awaiting review |
+| 2026-10-19 | P1 | v0.1.1 (additive): `ActivityBlock`, `PatientState.planned_activity`, planned meals (R2.3) | awaiting review |
+| 2026-10-19 | P1 | `pytest -m contract` against real: **fails** (no `data/processed/patient_profiles/`). Expected until the Day-5 P3 handoff | open |

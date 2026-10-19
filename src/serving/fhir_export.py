@@ -36,8 +36,10 @@ OBS_CATEGORY = "http://terminology.hl7.org/CodeSystem/observation-category"
 ACT_REASON = "http://terminology.hl7.org/CodeSystem/v3-ActReason"
 TAG_SYSTEM = "urn:madhutwin:tags"
 NS = uuid.UUID("6f1c2b1e-6a43-4c55-9f0e-6d2d1a7a0b11")  # fixed namespace → reproducible ids
-DISCLAIMER = ("Synthetic/open data only. Model estimate from observational data, not a proven causal "
-              "effect. Research PoC, not a medical device. Not medical advice.")
+DISCLAIMER = (
+    "Synthetic/open data only. Model estimate from observational data, not a proven causal "
+    "effect. Research PoC, not a medical device. Not medical advice."
+)
 
 
 def _iso(ts: datetime) -> str:
@@ -57,46 +59,81 @@ def build_bundle(state: PatientState, fc: Forecast, cgm_window_min: int = 240) -
     pid = state.profile.patient_id
     now = state.now
     patient_url = _urn("Patient", pid)
-    tags = [{"system": ACT_REASON, "code": "HTEST", "display": "test health data"},
-            {"system": TAG_SYSTEM, "code": "synthetic", "display": "Synthetic / mock data, not a real person"}]
-    entries: list[dict[str, Any]] = [{
-        "fullUrl": patient_url,
-        "resource": {
-            "resourceType": "Patient", "id": pid, "meta": {"tag": tags}, "active": True,
-            "identifier": [{"system": "urn:madhutwin:pseudonym", "value": pid}],
-            "gender": {"M": "male", "F": "female"}[state.profile.sex],
-        },
-    }]
+    tags = [
+        {"system": ACT_REASON, "code": "HTEST", "display": "test health data"},
+        {"system": TAG_SYSTEM, "code": "synthetic", "display": "Synthetic / mock data, not a real person"},
+    ]
+    entries: list[dict[str, Any]] = [
+        {
+            "fullUrl": patient_url,
+            "resource": {
+                "resourceType": "Patient",
+                "id": pid,
+                "meta": {"tag": tags},
+                "active": True,
+                "identifier": [{"system": "urn:madhutwin:pseudonym", "value": pid}],
+                "gender": {"M": "male", "F": "female"}[state.profile.sex],
+            },
+        }
+    ]
 
     hist = state.history.copy()
     hist["t"] = pd.to_datetime(hist["t"], utc=True)
-    win = hist[(hist["t"] > pd.Timestamp(now) - pd.Timedelta(minutes=cgm_window_min))
-               & (hist["t"] <= pd.Timestamp(now)) & ~hist["missing_mask"].astype(bool) & hist["glucose"].notna()]
+    win = hist[
+        (hist["t"] > pd.Timestamp(now) - pd.Timedelta(minutes=cgm_window_min))
+        & (hist["t"] <= pd.Timestamp(now))
+        & ~hist["missing_mask"].astype(bool)
+        & hist["glucose"].notna()
+    ]
     for _, row in win.iterrows():
         t = row["t"].to_pydatetime()
-        entries.append({"fullUrl": _urn("Observation", pid, _iso(t)), "resource": {
-            "resourceType": "Observation", "status": "final", "meta": {"tag": tags},
-            "category": [{"coding": [{"system": OBS_CATEGORY, "code": "laboratory", "display": "Laboratory"}]}],
-            "code": {"coding": [{"system": LOINC, "code": CGM_LOINC[0], "display": CGM_LOINC[1]}],
-                     "text": "CGM interstitial glucose"},
-            "subject": {"reference": patient_url}, "effectiveDateTime": _iso(t),
-            "valueQuantity": _mgdl(row["glucose"]),
-        }})
+        entries.append(
+            {
+                "fullUrl": _urn("Observation", pid, _iso(t)),
+                "resource": {
+                    "resourceType": "Observation",
+                    "status": "final",
+                    "meta": {"tag": tags},
+                    "category": [{"coding": [{"system": OBS_CATEGORY, "code": "laboratory", "display": "Laboratory"}]}],
+                    "code": {
+                        "coding": [{"system": LOINC, "code": CGM_LOINC[0], "display": CGM_LOINC[1]}],
+                        "text": "CGM interstitial glucose",
+                    },
+                    "subject": {"reference": patient_url},
+                    "effectiveDateTime": _iso(t),
+                    "valueQuantity": _mgdl(row["glucose"]),
+                },
+            }
+        )
 
     model = f"MadhuTwin model estimate ({fc.model_version or 'unversioned'}; provenance {fc.provenance.value})"
     period = {"start": _iso(now), "end": _iso(now + timedelta(minutes=120))}
-    entries.append({"fullUrl": _urn("RiskAssessment", pid, _iso(now)), "resource": {
-        "resourceType": "RiskAssessment", "status": "preliminary", "meta": {"tag": tags},
-        "subject": {"reference": patient_url}, "occurrenceDateTime": _iso(now),
-        "method": {"text": model},
-        "prediction": [
-            {"outcome": {"text": "Glucose > 180 mg/dL (hyperglycaemic spike)"},
-             "probabilityDecimal": round(fc.spike_prob, 3), "whenPeriod": period},
-            {"outcome": {"text": "Glucose < 70 mg/dL (hypoglycaemia)"},
-             "probabilityDecimal": round(fc.hypo_prob, 3), "whenPeriod": period},
-        ],
-        "note": [{"text": f"Model confidence {fc.confidence:.2f}. {DISCLAIMER}"}],
-    }})
+    entries.append(
+        {
+            "fullUrl": _urn("RiskAssessment", pid, _iso(now)),
+            "resource": {
+                "resourceType": "RiskAssessment",
+                "status": "preliminary",
+                "meta": {"tag": tags},
+                "subject": {"reference": patient_url},
+                "occurrenceDateTime": _iso(now),
+                "method": {"text": model},
+                "prediction": [
+                    {
+                        "outcome": {"text": "Glucose > 180 mg/dL (hyperglycaemic spike)"},
+                        "probabilityDecimal": round(fc.spike_prob, 3),
+                        "whenPeriod": period,
+                    },
+                    {
+                        "outcome": {"text": "Glucose < 70 mg/dL (hypoglycaemia)"},
+                        "probabilityDecimal": round(fc.hypo_prob, 3),
+                        "whenPeriod": period,
+                    },
+                ],
+                "note": [{"text": f"Model confidence {fc.confidence:.2f}. {DISCLAIMER}"}],
+            },
+        }
+    )
 
     components = []
     for h in (30, 60, 120):
@@ -105,16 +142,31 @@ def build_bundle(state: PatientState, fc: Forecast, cgm_window_min: int = 240) -
         if fc.quantiles_90 and str(h) in fc.quantiles_90:
             for name, v in zip(("q05", "q95"), fc.quantiles_90[str(h)]):
                 components.append({"code": {"text": f"{name} glucose at +{h} min"}, "valueQuantity": _mgdl(v)})
-    entries.append({"fullUrl": _urn("Observation", pid, "forecast", _iso(now)), "resource": {
-        "resourceType": "Observation", "status": "preliminary", "meta": {"tag": tags},
-        "code": {"text": "MadhuTwin glucose forecast (interstitial, quantiles)"},
-        "subject": {"reference": patient_url}, "effectivePeriod": period, "issued": _iso(now),
-        "method": {"text": model}, "component": components,
-        "note": [{"text": f"Feature library {fc.feature_lib_version or 'n/a'}. {DISCLAIMER}"}],
-    }})
+    entries.append(
+        {
+            "fullUrl": _urn("Observation", pid, "forecast", _iso(now)),
+            "resource": {
+                "resourceType": "Observation",
+                "status": "preliminary",
+                "meta": {"tag": tags},
+                "code": {"text": "MadhuTwin glucose forecast (interstitial, quantiles)"},
+                "subject": {"reference": patient_url},
+                "effectivePeriod": period,
+                "issued": _iso(now),
+                "method": {"text": model},
+                "component": components,
+                "note": [{"text": f"Feature library {fc.feature_lib_version or 'n/a'}. {DISCLAIMER}"}],
+            },
+        }
+    )
 
-    bundle = {"resourceType": "Bundle", "id": f"madhutwin-{pid}-{now.astimezone(UTC):%Y%m%dT%H%M}",
-              "type": "collection", "timestamp": _iso(now), "entry": entries}
+    bundle = {
+        "resourceType": "Bundle",
+        "id": f"madhutwin-{pid}-{now.astimezone(UTC):%Y%m%dT%H%M}",
+        "type": "collection",
+        "timestamp": _iso(now),
+        "entry": entries,
+    }
     return json.loads(Bundle.model_validate(bundle).model_dump_json(exclude_none=True))
 
 

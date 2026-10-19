@@ -16,8 +16,15 @@ common.init_session()
 
 
 def _label(lbl: str) -> str:
-    return common.prov_badge("MOCK") if lbl == "MOCK" else common.prov_badge("MODEL_ESTIMATE") if lbl != "MISSING" \
-        else common.badge("NOT YET AVAILABLE", "tier-unknown")
+    return (
+        common.prov_badge("MOCK")
+        if lbl == "MOCK"
+        else (
+            common.prov_badge("MODEL_ESTIMATE")
+            if lbl != "MISSING"
+            else common.badge("NOT YET AVAILABLE", "tier-unknown")
+        )
+    )
 
 
 def _section(title: str, name: str):
@@ -44,8 +51,10 @@ def _cohort_agreement(mode: str, now_iso: str) -> tuple[int, int]:
 
 def render() -> None:
     st.title("Model trust")
-    st.caption("How far to trust the forecasts. Every number here carries its provenance. MOCK values are "
-               "placeholders until P2's evaluation lands; they are not results.")
+    st.caption(
+        "How far to trust the forecasts. Every number here carries its provenance. MOCK values are "
+        "placeholders until P2's evaluation lands; they are not results."
+    )
 
     summary, slbl = common.report("eval_summary")
     if isinstance(summary, dict) and "horizons" in summary:
@@ -59,28 +68,39 @@ def render() -> None:
         cols[-2].metric("Coverage 80% / 90%", f"{cov.get('80', float('nan')):.0%} / {cov.get('90', float('nan')):.0%}")
         lt = summary.get("lead_time_min", {})
         cols[-1].metric("Lead time median (p25)", f"{lt.get('median', '?')} ({lt.get('p25', '?')}) min")
-        st.caption("Context: published T1D forecasters report about 19–21 mg/dL RMSE at 30 min and 31–33 at 60 min on "
-                   "different data. That is a reference range, not a target.")
+        st.caption(
+            "Context: published T1D forecasters report about 19–21 mg/dL RMSE at 30 min and 31–33 at 60 min on "
+            "different data. That is a reference range, not a target."
+        )
 
     c1, c2 = st.columns(2)
     with c1:
         cal = _section("Interval calibration", "calibration")
         if cal is not None:
-            st.plotly_chart(charts.calibration_figure(cal, "coverage", "Nominal vs empirical coverage"),
-                            width="stretch", key="cov")
+            st.plotly_chart(
+                charts.calibration_figure(cal, "coverage", "Nominal vs empirical coverage"), width="stretch", key="cov"
+            )
     with c2:
         if cal is not None:
             st.markdown("#### Event probability reliability")
             which = st.radio("Event", ["spike", "hypo"], horizontal=True, key="rel")
-            st.plotly_chart(charts.calibration_figure(cal, f"reliability_{which}", f"Reliability: {which}"),
-                            width="stretch", key="relfig")
+            st.plotly_chart(
+                charts.calibration_figure(cal, f"reliability_{which}", f"Reliability: {which}"),
+                width="stretch",
+                key="relfig",
+            )
 
     c1, c2 = st.columns(2)
     with c1:
         sub = _section("Subgroup error (bootstrap 95% CI)", "subgroups")
         if sub is not None:
-            st.dataframe(sub.assign(ci=sub.apply(lambda r: f"[{r['ci_low']:.3g}, {r['ci_high']:.3g}]", axis=1))
-                         [["cohort", "metric", "value", "ci", "n_participants"]], hide_index=True, width="stretch")
+            st.dataframe(
+                sub.assign(ci=sub.apply(lambda r: f"[{r['ci_low']:.3g}, {r['ci_high']:.3g}]", axis=1))[
+                    ["cohort", "metric", "value", "ci", "n_participants"]
+                ],
+                hide_index=True,
+                width="stretch",
+            )
     with c2:
         clarke = _section("Clarke Error Grid", "clarke_grid")
         if clarke is not None:
@@ -92,21 +112,36 @@ def render() -> None:
         best = {m: tables.best_without_overlap(abl, m) for m in abl["metric"].unique()}
 
         def _style(row):
-            return ["font-weight: 700; background-color: rgba(0,158,115,0.25)"
-                    if col in best and best[col] == row["variant"] else "" for col in row.index]
+            return [
+                (
+                    "font-weight: 700; background-color: rgba(0,158,115,0.25)"
+                    if col in best and best[col] == row["variant"]
+                    else ""
+                )
+                for col in row.index
+            ]
 
         st.dataframe(piv.style.apply(_style, axis=1), hide_index=True, width="stretch")
-        notes = [f"{m}: **{v}** is best with non-overlapping CIs" if v else f"{m}: no variant is clearly best "
-                 "(CIs overlap), so none is highlighted" for m, v in best.items()]
+        notes = [
+            (
+                f"{m}: **{v}** is best with non-overlapping CIs"
+                if v
+                else f"{m}: no variant is clearly best " "(CIs overlap), so none is highlighted"
+            )
+            for m, v in best.items()
+        ]
         st.caption(" · ".join(notes) + ". Variants: EHR-only, wearable-only, concat, FiLM, FiLM + physics.")
 
     c1, c2 = st.columns(2)
     with c1:
         san = _section("What-if directional sanity", "whatif_sanity")
         if san is not None:
-            st.dataframe(san, hide_index=True, width="stretch",
-                         column_config={"pass_rate": st.column_config.ProgressColumn(min_value=0, max_value=1,
-                                                                                     format="%.2f")})
+            st.dataframe(
+                san,
+                hide_index=True,
+                width="stretch",
+                column_config={"pass_rate": st.column_config.ProgressColumn(min_value=0, max_value=1, format="%.2f")},
+            )
     with c2:
         st.markdown("#### Attribution ↔ what-if agreement")
         agree, total = _cohort_agreement(common.mode_key(), common.now().isoformat())
@@ -114,8 +149,11 @@ def render() -> None:
             st.metric("Agreement rate (cohort, current replay time)", f"{agree / total:.0%}", help=f"{agree}/{total}")
         else:
             st.write("No testable levers at this time.")
-        st.caption("On the mock, attributions are faithful by construction, so 100% is expected. The real model is "
-                   "where this check matters.")
+        st.caption(
+            "On the mock, attributions go through the same pipeline as the what-if engine, so ~100% is "
+            "expected; anything lower flags an inconsistency (this check caught one during development). "
+            "The real model is where it matters most."
+        )
 
     st.markdown("#### Data provenance register")
     st.dataframe(tables.PROVENANCE_REGISTER, hide_index=True, width="stretch")
@@ -126,8 +164,10 @@ def render() -> None:
     thr, calibrated = common.thresholds()
     if not calibrated:
         st.caption("Alert thresholds in use are UNCALIBRATED placeholders: " + thr.get("stratum_rule", ""))
-    st.caption("Positioning: an open, ablation-tested, EHR-conditioned T2D digital twin with a clinician-facing "
-               "what-if lab. We do not claim to outperform commercial products.")
+    st.caption(
+        "Positioning: an open, ablation-tested, EHR-conditioned T2D digital twin with a clinician-facing "
+        "what-if lab. We do not claim to outperform commercial products."
+    )
     pd.set_option("display.precision", 3)
 
 

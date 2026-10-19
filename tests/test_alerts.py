@@ -12,9 +12,17 @@ THR = mock_thresholds()
 
 
 def fc(spike=0.0, hypo=0.0, conf=0.8, g=(120, 125, 130), rule=False, traj=None):
-    return Forecast(glucose_30=g, glucose_60=g, glucose_120=g, spike_prob=spike, hypo_prob=hypo, confidence=conf,
-                    detector_flags={"quantile": False, "classifier": False, "rule_net": rule},
-                    trajectory=traj, model_version="test-1")
+    return Forecast(
+        glucose_30=g,
+        glucose_60=g,
+        glucose_120=g,
+        spike_prob=spike,
+        hypo_prob=hypo,
+        confidence=conf,
+        detector_flags={"quantile": False, "classifier": False, "rule_net": rule},
+        trajectory=traj,
+        model_version="test-1",
+    )
 
 
 def inp(f, cohort="t2d", g_now=120.0, dq=1.0, stale=0.0, pid="P-100", now=NOW):
@@ -65,16 +73,23 @@ def test_stale_is_unknown_never_low_risk():
     assert t["unknown"] == al.Tier.WARNING
     t = tiers(al.evaluate(inp(fc(), cohort="healthy", g_now=None, stale=45), THR, recently_high_risk=True))
     assert t["unknown"] == al.Tier.CRITICAL
-    t = tiers(al.evaluate(inp(fc(), cohort="t2d", g_now=None, stale=float("inf")), THR))
-    assert t["unknown"] == al.Tier.CRITICAL
+    cands = al.evaluate(inp(fc(), cohort="t2d", g_now=None, stale=float("inf")), THR)
+    assert tiers(cands)["unknown"] == al.Tier.CRITICAL
+    assert next(c for c in cands if c.event == "unknown").detectors == ("stale_stream",)
 
 
 def test_lead_time_from_trajectory_and_buckets():
     traj = [{"t_min": m, "q10": 150 + m, "q50": 160 + m, "q90": 170 + m} for m in range(5, 125, 5)]
     c = al.evaluate(inp(fc(spike=0.9, g=(190, 220, 230), traj=traj)), THR)[0]
     assert c.lead_min == 25 and c.lead_label == "~25 min"
-    no_traj = Forecast(glucose_30=(140, 150, 160), glucose_60=(165, 185, 205), glucose_120=(150, 170, 190),
-                       spike_prob=0.9, hypo_prob=0.0, confidence=0.8)
+    no_traj = Forecast(
+        glucose_30=(140, 150, 160),
+        glucose_60=(165, 185, 205),
+        glucose_120=(150, 170, 190),
+        spike_prob=0.9,
+        hypo_prob=0.0,
+        confidence=0.8,
+    )
     c = al.evaluate(inp(no_traj), THR)[0]
     assert c.lead_label == "≤60 min"  # bucketed: no false precision without a trajectory
 
@@ -129,16 +144,25 @@ def test_watch_escalates_after_two_evaluations():
 
 
 def test_queue_sorting():
-    a = [al.Alert(str(i), "P", "t2d", "spike", t, p, 0.8, lead, "", (), 1.0, "m", "r", NOW, NOW)
-         for i, (t, lead, p) in enumerate([(al.Tier.WARNING, 30, 0.5), (al.Tier.CRITICAL, 60, 0.9),
-                                           (al.Tier.WARNING, 10, 0.4), (al.Tier.WARNING, 10, 0.9)])]
+    a = [
+        al.Alert(str(i), "P", "t2d", "spike", t, p, 0.8, lead, "", (), 1.0, "m", "r", NOW, NOW)
+        for i, (t, lead, p) in enumerate(
+            [
+                (al.Tier.WARNING, 30, 0.5),
+                (al.Tier.CRITICAL, 60, 0.9),
+                (al.Tier.WARNING, 10, 0.4),
+                (al.Tier.WARNING, 10, 0.9),
+            ]
+        )
+    ]
     assert [x.id for x in al.sort_queue(a)] == ["1", "3", "2", "0"]
 
 
 def test_burden_arithmetic():
     book = al.AlertBook()
-    book.update(NOW, [cand(al.Tier.WARNING, pid="A"), cand(al.Tier.CRITICAL, "hypo", pid="B"),
-                      cand(al.Tier.WATCH, pid="C")])
+    book.update(
+        NOW, [cand(al.Tier.WARNING, pid="A"), cand(al.Tier.CRITICAL, "hypo", pid="B"), cand(al.Tier.WATCH, pid="C")]
+    )
     b = al.burden(book, n_patients=3, window_hours=24)
     assert (b.episodes, b.actionable, b.critical) == (3, 2, 1)
     assert b.per_patient_day == 1.0 and b.critical_share == pytest.approx(1 / 3, abs=1e-3)
@@ -147,8 +171,9 @@ def test_burden_arithmetic():
 
 def test_replay_on_mock_day():
     times = [t for t in mock_data.replay_times(30) if t <= mock_data.DEMO_NOW]
-    snaps = al.replay(times, backend.list_patients(), backend.get_state,
-                      lambda s: backend.predict(s, explain=False), THR)
+    snaps = al.replay(
+        times, backend.list_patients(), backend.get_state, lambda s: backend.predict(s, explain=False), THR
+    )
     last = snaps[-1]
     by = {(a.patient_id, a.event): a for a in last.queue}
     assert by[("P-011", "hypo")].tier == al.Tier.CRITICAL

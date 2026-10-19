@@ -23,8 +23,10 @@ from src.serving import timeseries as ts
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
 DEMO = os.environ.get("MADHUTWIN_DEMO") == "1"
 DISCLAIMER_FOOTER = "Synthetic/open data only. Research PoC, not a medical device."
-WHATIF_DISCLAIMER = ("Model estimate learned from observational data, not a proven causal effect. "
-                     "Not medical advice. Medication changes are intentionally excluded from what-if.")
+WHATIF_DISCLAIMER = (
+    "Model estimate learned from observational data, not a proven causal effect. "
+    "Not medical advice. Medication changes are intentionally excluded from what-if."
+)
 
 TIER_STYLE = {  # icon + text, never colour alone
     al.Tier.CRITICAL: ("‼", "CRITICAL", "tier-critical"),
@@ -108,8 +110,9 @@ def _replay(mode: str, step_min: int) -> list[al.Snapshot]:
         times.append(t)
         t += timedelta(minutes=step_min)
     thr, _ = backend.thresholds()
-    return al.replay(times, backend.list_patients(), backend.get_state,
-                     lambda s: backend.predict(s, explain=False), thr)
+    return al.replay(
+        times, backend.list_patients(), backend.get_state, lambda s: backend.predict(s, explain=False), thr
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -131,8 +134,9 @@ def get_state(p: str | None = None, at: datetime | None = None) -> PatientState:
     return _state(p or pid(), (at or now()).isoformat(), mode_key())
 
 
-def run(p: str | None = None, at: datetime | None = None, scenario: Scenario | None = None,
-        explain: bool = True) -> tuple[PatientState, Forecast]:
+def run(
+    p: str | None = None, at: datetime | None = None, scenario: Scenario | None = None, explain: bool = True
+) -> tuple[PatientState, Forecast]:
     sc = (scenario or Scenario()).model_dump_json()
     return _run(p or pid(), (at or now()).isoformat(), sc, mode_key(), explain)
 
@@ -200,8 +204,12 @@ def risk_level(state: PatientState, fc: Forecast) -> tuple[str, str]:
     if any(c.event == "unknown" for c in cands):
         return "UNKNOWN", "tier-unknown"
     top = max((c.tier for c in cands), default=al.Tier.NONE)
-    return {al.Tier.CRITICAL: ("CRITICAL", "tier-critical"), al.Tier.WARNING: ("HIGH", "tier-warning"),
-            al.Tier.WATCH: ("ELEVATED", "tier-watch"), al.Tier.NONE: ("LOW", "tier-none")}[top]
+    return {
+        al.Tier.CRITICAL: ("CRITICAL", "tier-critical"),
+        al.Tier.WARNING: ("HIGH", "tier-warning"),
+        al.Tier.WATCH: ("ELEVATED", "tier-watch"),
+        al.Tier.NONE: ("LOW", "tier-none"),
+    }[top]
 
 
 def dq_label(dq: float | None) -> tuple[str, str]:
@@ -219,8 +227,11 @@ def dq_label(dq: float | None) -> tuple[str, str]:
 
 def error_card(e: Exception) -> None:
     if isinstance(e, ContractError):
-        st.error(f"**Contract error from {e.source}.** A teammate's output did not match `src/contracts.py`, so "
-                 f"this view is not shown rather than shown wrong.\n\n```\n{e.detail[:1500]}\n```", icon="🚫")
+        st.error(
+            f"**Contract error from {e.source}.** A teammate's output did not match `src/contracts.py`, so "
+            f"this view is not shown rather than shown wrong.\n\n```\n{e.detail[:1500]}\n```",
+            icon="🚫",
+        )
     else:
         st.error(f"**Could not render this view:** {e}", icon="🚫")
 
@@ -299,21 +310,25 @@ def header() -> None:
     dq, dcls = dq_label(state.data_quality)
     b = backend.describe()
     backend_txt = b["data"] if b["data"] == b["model"] else f"data {b['data']} / model {b['model']}"
-    md('<div class="mt-header">'
-       f'<span class="mt-h-item"><b>Patient</b> {html.escape(state.profile.patient_id)}</span>'
-       f'<span class="mt-h-item"><b>Risk</b> {badge(risk, rcls)}</span>'
-       f'<span class="mt-h-item"><b>Data quality</b> {badge(dq, dcls)}</span>'
-       f'<span class="mt-h-item"><b>Mode</b> {html.escape(state.uplink_mode or "n/a")}</span>'
-       f'<span class="mt-h-item"><b>Backend</b> {html.escape(backend_txt)}</span>'
-       f'<span class="mt-h-item mt-h-time"><b>Now</b> {ts.hhmm(state.now)} IST</span>'
-       "</div>")
+    md(
+        '<div class="mt-header">'
+        f'<span class="mt-h-item"><b>Patient</b> {html.escape(state.profile.patient_id)}</span>'
+        f'<span class="mt-h-item"><b>Risk</b> {badge(risk, rcls)}</span>'
+        f'<span class="mt-h-item"><b>Data quality</b> {badge(dq, dcls)}</span>'
+        f'<span class="mt-h-item"><b>Mode</b> {html.escape(state.uplink_mode or "n/a")}</span>'
+        f'<span class="mt-h-item"><b>Backend</b> {html.escape(backend_txt)}</span>'
+        f'<span class="mt-h-item mt-h-time"><b>Now</b> {ts.hhmm(state.now)} IST</span>'
+        "</div>"
+    )
 
 
 def footer() -> None:
     st.divider()
     legend = " ".join(prov_badge(p) for p in ("REAL", "SYNTHETIC", "MOCK", "MODEL_ESTIMATE"))
-    md(f'<div class="mt-footer">Provenance: {legend}<br><b>{DISCLAIMER_FOOTER}</b> '
-       "Model estimates are learned from observational data and are not causal effects.</div>")
+    md(
+        f'<div class="mt-footer">Provenance: {legend}<br><b>{DISCLAIMER_FOOTER}</b> '
+        "Model estimates are learned from observational data and are not causal effects.</div>"
+    )
 
 
 def disclaimer() -> None:

@@ -29,8 +29,11 @@ def test_patient_is_pseudonymous_and_tagged():
 def test_cgm_observation_coding():
     _, b = bundle()
     obs = b["entry"][1]["resource"]
-    assert obs["code"]["coding"][0] == {"system": "http://loinc.org", "code": "99504-3",
-                                        "display": "Glucose [Mass/volume] in Interstitial fluid"}
+    assert obs["code"]["coding"][0] == {
+        "system": "http://loinc.org",
+        "code": "99504-3",
+        "display": "Glucose [Mass/volume] in Interstitial fluid",
+    }
     assert obs["valueQuantity"]["system"] == "http://unitsofmeasure.org" and obs["valueQuantity"]["code"] == "mg/dL"
 
 

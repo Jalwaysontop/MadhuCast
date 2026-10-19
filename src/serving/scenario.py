@@ -45,10 +45,16 @@ def target_index(state: PatientState, scenario: Scenario) -> int | None:
 
 def _scale(meal: Meal, k: float) -> Meal:
     items = [{**i, "portion": round(float(i.get("portion", 1)) * k, 2)} for i in meal.items] if meal.items else None
-    return meal.model_copy(update={
-        "carbs_g": meal.carbs_g * k, "protein_g": meal.protein_g * k, "fat_g": meal.fat_g * k,
-        "fibre_g": meal.fibre_g * k, "gl": meal.gl * k, "items": items,
-    })
+    return meal.model_copy(
+        update={
+            "carbs_g": meal.carbs_g * k,
+            "protein_g": meal.protein_g * k,
+            "fat_g": meal.fat_g * k,
+            "fibre_g": meal.fibre_g * k,
+            "gl": meal.gl * k,
+            "items": items,
+        }
+    )
 
 
 def _rewrite_sleep(hist: pd.DataFrame, now: datetime, hours: float) -> pd.DataFrame:
@@ -58,8 +64,11 @@ def _rewrite_sleep(hist: pd.DataFrame, now: datetime, hours: float) -> pd.DataFr
     if not win.any():
         return hist
     asleep_rows = hist.loc[win & (hist["sleep_proxy"] >= 0.5), "t"]
-    wake = (pd.to_datetime(asleep_rows, utc=True).max() + pd.Timedelta(minutes=ts.STEP_MIN)
-            if len(asleep_rows) else pd.Timestamp(start) + pd.Timedelta(hours=10, minutes=40))
+    wake = (
+        pd.to_datetime(asleep_rows, utc=True).max() + pd.Timedelta(minutes=ts.STEP_MIN)
+        if len(asleep_rows)
+        else pd.Timestamp(start) + pd.Timedelta(hours=10, minutes=40)
+    )
     onset = wake - pd.Timedelta(hours=hours)
     new_sleep = ((t >= onset) & (t < wake)).astype(float)
     changed = win & (new_sleep != hist["sleep_proxy"])
@@ -97,8 +106,11 @@ def apply(state: PatientState, scenario: Scenario, resolve: Resolver) -> Patient
         anchor_t = m.t
 
     if scenario.walk_minutes:
-        block = ActivityBlock(start=anchor_t + timedelta(minutes=scenario.walk_start_offset_min),
-                              minutes=scenario.walk_minutes, mets=WALK_METS)
+        block = ActivityBlock(
+            start=anchor_t + timedelta(minutes=scenario.walk_start_offset_min),
+            minutes=scenario.walk_minutes,
+            mets=WALK_METS,
+        )
         t = pd.to_datetime(hist["t"], utc=True)
         on = (t >= pd.Timestamp(block.start)) & (t < pd.Timestamp(block.start) + pd.Timedelta(minutes=block.minutes))
         hist.loc[on, "mets"] = hist.loc[on, "mets"].clip(lower=WALK_METS)
@@ -113,10 +125,14 @@ def apply(state: PatientState, scenario: Scenario, resolve: Resolver) -> Patient
         meals = [mm for i, mm in enumerate(meals) if mm.t <= now or i == idx]
 
     return PatientState(
-        profile=state.profile, history=hist.reset_index(drop=True), meals=meals, now=now,
+        profile=state.profile,
+        history=hist.reset_index(drop=True),
+        meals=meals,
+        now=now,
         data_quality=ts.data_quality(hist, now) if now != state.now else state.data_quality,
         stream_last_seen=ts.stream_last_seen(hist, now) if now != state.now else state.stream_last_seen,
-        uplink_mode=state.uplink_mode, planned_activity=planned,
+        uplink_mode=state.uplink_mode,
+        planned_activity=planned,
     )
 
 
@@ -142,20 +158,23 @@ class Comparison:
         return None
 
 
-def compare(base_fc: Forecast, scen_fc: Forecast, base_now_g: float | None = None,
-            scen_now_g: float | None = None) -> Comparison:
+def compare(
+    base_fc: Forecast, scen_fc: Forecast, base_now_g: float | None = None, scen_now_g: float | None = None
+) -> Comparison:
     cb, cs = ts.forecast_curve(base_fc, base_now_g), ts.forecast_curve(scen_fc, scen_now_g)
     ib, is_ = int(cb["q50"].idxmax()), int(cs["q50"].idxmax())
     bb = (float(cb.at[ib, "q10"]), float(cb.at[ib, "q90"]))
     bs = (float(cs.at[is_, "q10"]), float(cs.at[is_, "q90"]))
     return Comparison(
-        peak_base=float(cb.at[ib, "q50"]), peak_scen=float(cs.at[is_, "q50"]),
+        peak_base=float(cb.at[ib, "q50"]),
+        peak_scen=float(cs.at[is_, "q50"]),
         d_peak=float(cs.at[is_, "q50"] - cb.at[ib, "q50"]),
         d_time_above_180=ts.time_above(cs) - ts.time_above(cb),
         d_spike_prob=scen_fc.spike_prob - base_fc.spike_prob,
         d_hypo_prob=scen_fc.hypo_prob - base_fc.hypo_prob,
         bands_overlap=bs[0] <= bb[1] and bb[0] <= bs[1],
-        scen_band_at_peak=bs, base_band_at_peak=bb,
+        scen_band_at_peak=bs,
+        base_band_at_peak=bb,
     )
 
 
@@ -169,8 +188,13 @@ def rice_to_millet(items: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
     out = []
     for i in items:
         if "rice" in i["food"] and "biryani" not in i["food"]:
-            out.append({"food": "millet roti (bajra)", "portion": round(float(i["portion"]) * RICE_TO_MILLET_ROTI),
-                        "unit": "piece"})
+            out.append(
+                {
+                    "food": "millet roti (bajra)",
+                    "portion": round(float(i["portion"]) * RICE_TO_MILLET_ROTI),
+                    "unit": "piece",
+                }
+            )
         else:
             out.append(dict(i))
     return out

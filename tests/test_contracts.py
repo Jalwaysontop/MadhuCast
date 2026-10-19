@@ -12,8 +12,14 @@ NOW = datetime(2026, 11, 20, 14, 0, tzinfo=UTC)
 
 def profile(**kw):
     base = dict(
-        patient_id="P-017", cohort="t2d", age=52, sex="M", bmi=28.4, hba1c=8.1,
-        fasting_glucose=162, provenance={"age": Provenance.MOCK},
+        patient_id="P-017",
+        cohort="t2d",
+        age=52,
+        sex="M",
+        bmi=28.4,
+        hba1c=8.1,
+        fasting_glucose=162,
+        provenance={"age": Provenance.MOCK},
     )
     return PatientProfile(**(base | kw))
 
@@ -21,16 +27,26 @@ def profile(**kw):
 def history(hours=4):
     t = pd.date_range(NOW - timedelta(hours=hours), NOW, freq="5min", tz="UTC")
     n = len(t)
-    return pd.DataFrame({
-        "t": t, "glucose": np.full(n, 140.0), "hr": 72.0, "mets": 1.2,
-        "sleep_proxy": 0.0, "missing_mask": False,
-    })
+    return pd.DataFrame(
+        {
+            "t": t,
+            "glucose": np.full(n, 140.0),
+            "hr": 72.0,
+            "mets": 1.2,
+            "sleep_proxy": 0.0,
+            "missing_mask": False,
+        }
+    )
 
 
 def forecast(**kw):
     base = dict(
-        glucose_30=(130, 145, 160), glucose_60=(125, 150, 175), glucose_120=(110, 140, 170),
-        spike_prob=0.1, hypo_prob=0.01, confidence=0.8,
+        glucose_30=(130, 145, 160),
+        glucose_60=(125, 150, 175),
+        glucose_120=(110, 140, 170),
+        spike_prob=0.1,
+        hypo_prob=0.01,
+        confidence=0.8,
     )
     return Forecast(**(base | kw))
 
@@ -90,8 +106,10 @@ def test_forecast_quantile_order_and_ranges():
 
 
 def test_forecast_trajectory_validation():
-    good = [{"t_min": 5, "q10": 130, "q50": 140, "q90": 150},
-            {"t_min": 10, "q05": 120, "q10": 128, "q50": 141, "q90": 155, "q95": 160}]
+    good = [
+        {"t_min": 5, "q10": 130, "q50": 140, "q90": 150},
+        {"t_min": 10, "q05": 120, "q10": 128, "q50": 141, "q90": 155, "q95": 160},
+    ]
     assert len(forecast(trajectory=good).trajectory) == 2
     with pytest.raises(ValidationError):
         forecast(trajectory=[{"t_min": 5, "q10": 150, "q50": 140, "q90": 160}])

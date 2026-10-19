@@ -1,0 +1,4 @@
+# file: /Users/aadvikchaturvedi/digital_twin/dashboard/components/common.py
+# hypothesis_version: 6.140.0
+
+[0.6, 0.9, 512, '### MadhuTwin', '%H:%M', '%a %H:%M', '1', '? UNKNOWN', 'CRITICAL', 'ELEVATED', 'HIGH', 'LOW', 'MADHUTWIN_DEMO', 'MOCK', 'MODEL ESTIMATE', 'MODEL_ESTIMATE', 'NO ALERT', 'P-010', 'Patient', 'REAL', 'SYNTHETIC', 'UNKNOWN', 'WARNING', 'WATCH', '_pid_pending', 'assets', 'calibrated', 'data', 'model', 'now', 'now_slider', 'pid', 'pid_select', 'saved_scenarios', 'style.css', 'thresholds', 'tier-critical', 'tier-none', 'tier-unknown', 'tier-warning', 'tier-watch', 'unknown', 'whatif_meal', '‼', '▲', '●', '⚠️', '✓', '🎬', '🚫']

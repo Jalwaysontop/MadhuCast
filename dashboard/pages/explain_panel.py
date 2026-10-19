@@ -30,8 +30,10 @@ def render() -> None:
             groups: dict[str, float] = {}
             for k, v in fc.shap_values.items():
                 groups[T.spec(k).group] = groups.get(T.spec(k).group, 0) + v
-            st.caption("By group: " + " · ".join(f"{g} {v:+.0f}" for g, v in
-                                                 sorted(groups.items(), key=lambda kv: -abs(kv[1]))))
+            st.caption(
+                "By group: "
+                + " · ".join(f"{g} {v:+.0f}" for g, v in sorted(groups.items(), key=lambda kv: -abs(kv[1])))
+            )
         else:
             st.info(T.FALLBACK)
     with right:
@@ -48,19 +50,34 @@ def render() -> None:
     st.caption(T.ATTENTION_CAPTION)
 
     st.markdown("#### Reliability check: do attributions agree with the what-if engine?")
-    st.caption("For the top attributed levers, we run the matching what-if (which increases that input) and check "
-               "that the predicted peak moves in the direction the attribution implies.")
+    st.caption(
+        "For the top attributed levers, we run the matching what-if (which increases that input) and check "
+        "that the predicted peak moves in the direction the attribution implies."
+    )
     res = T.agreement_check(state, fc, lambda s, sc: backend.predict(s, sc))
     if not res:
         st.write("No attributed what-if levers to test for this forecast (e.g. no walking to vary).")
     else:
-        st.dataframe(pd.DataFrame([{
-            "Feature": r.label, "What-if tested": r.lever,
-            "Expected direction": "↑ peak" if r.expected_sign > 0 else "↓ peak",
-            "Observed Δ peak": f"{r.observed_delta:+.1f} mg/dL", "Agree": "✓" if r.agree else "✗",
-        } for r in res]), hide_index=True, width="stretch")
-        st.caption(f"Agreement {sum(r.agree for r in res)}/{len(res)} for this patient. The cohort-wide rate is on the "
-                   "Model Trust page.")
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    {
+                        "Feature": r.label,
+                        "What-if tested": r.lever,
+                        "Expected direction": "↑ peak" if r.expected_sign > 0 else "↓ peak",
+                        "Observed Δ peak": f"{r.observed_delta:+.1f} mg/dL",
+                        "Agree": "✓" if r.agree else "✗",
+                    }
+                    for r in res
+                ]
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+        st.caption(
+            f"Agreement {sum(r.agree for r in res)}/{len(res)} for this patient. The cohort-wide rate is on the "
+            "Model Trust page."
+        )
 
 
 common.guard(render)

@@ -192,8 +192,9 @@ def _provider_predict(state: PatientState, scenario: Scenario, explain: bool) ->
     return raw if isinstance(raw, Forecast) else _validate(Forecast, raw, "P2:predict")
 
 
-def run_scenario(state: PatientState, scenario: Scenario | None = None, *,
-                 explain: bool = True) -> tuple[PatientState, Forecast]:
+def run_scenario(
+    state: PatientState, scenario: Scenario | None = None, *, explain: bool = True
+) -> tuple[PatientState, Forecast]:
     """Apply what-if levers (P1, ADR-005), then predict. Returns the evaluated state too,
     because an earlier meal-time shift moves the evaluation time back."""
     from src.serving import scenario as scenario_mod

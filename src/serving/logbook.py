@@ -29,19 +29,34 @@ def _append(name: str, record: dict[str, Any]) -> dict[str, Any]:
     return record
 
 
-def feedback(alert_id: str, label: str, patient_id: str, model_version: str | None,
-             alert_time: datetime | None = None, note: str = "") -> dict[str, Any]:
+def feedback(
+    alert_id: str,
+    label: str,
+    patient_id: str,
+    model_version: str | None,
+    alert_time: datetime | None = None,
+    note: str = "",
+) -> dict[str, Any]:
     if label not in FEEDBACK_LABELS:
         raise ValueError(f"label must be one of {FEEDBACK_LABELS}")
-    return _append("feedback.jsonl", {
-        "alert_id": alert_id, "label": label, "patient_id": patient_id, "model_version": model_version,
-        "alert_time": alert_time.isoformat() if alert_time else None, "note": note,
-    })
+    return _append(
+        "feedback.jsonl",
+        {
+            "alert_id": alert_id,
+            "label": label,
+            "patient_id": patient_id,
+            "model_version": model_version,
+            "alert_time": alert_time.isoformat() if alert_time else None,
+            "note": note,
+        },
+    )
 
 
 def audit(action: str, patient_id: str, detail: dict[str, Any] | None = None, consent: bool = False) -> dict[str, Any]:
-    return _append("audit.jsonl", {"action": action, "patient_id": patient_id, "consent_flag": consent,
-                                   "detail": detail or {}, "stub": True})
+    return _append(
+        "audit.jsonl",
+        {"action": action, "patient_id": patient_id, "consent_flag": consent, "detail": detail or {}, "stub": True},
+    )
 
 
 def read(name: str, limit: int = 50) -> list[dict[str, Any]]:

@@ -34,12 +34,17 @@ def render() -> None:
     left, right = st.columns([1, 2.6])
     with left:
         st.markdown("#### EHR summary")
-        st.markdown(f"**{p.patient_id}** · {p.cohort.upper()} · {p.age}{p.sex}  \n"
-                    f"HbA1c **{p.hba1c:.1f}%** · FPG **{p.fasting_glucose:g}** mg/dL · BMI **{p.bmi:.1f}**  \n"
-                    f"Comorbidities: {', '.join(p.comorbidities) or 'none'}  \n"
-                    f"Medications *(display only)*: {', '.join(p.medications) or 'none'}")
-        st.metric("Current glucose", f"{g_now:.0f} mg/dL" if g_now is not None else "UNKNOWN",
-                  help="UNKNOWN when the last CGM sample is older than 15 min. Never treated as low risk.")
+        st.markdown(
+            f"**{p.patient_id}** · {p.cohort.upper()} · {p.age}{p.sex}  \n"
+            f"HbA1c **{p.hba1c:.1f}%** · FPG **{p.fasting_glucose:g}** mg/dL · BMI **{p.bmi:.1f}**  \n"
+            f"Comorbidities: {', '.join(p.comorbidities) or 'none'}  \n"
+            f"Medications *(display only)*: {', '.join(p.medications) or 'none'}"
+        )
+        st.metric(
+            "Current glucose",
+            f"{g_now:.0f} mg/dL" if g_now is not None else "UNKNOWN",
+            help="UNKNOWN when the last CGM sample is older than 15 min. Never treated as low risk.",
+        )
         for h in (30, 60, 120):
             q = fc.horizon(h)
             st.caption(f"+{h} min: **{q[1]:.0f}** mg/dL (80% range {q[0]:.0f}–{q[2]:.0f})")
@@ -48,8 +53,10 @@ def render() -> None:
         st.plotly_chart(fig, width="stretch", key="forecast-main")
         if curve.attrs.get("interpolated"):
             st.caption("Curve interpolated between forecast horizons (+30/+60/+120 min).")
-        st.caption("Solid blue: observed CGM (past 4 h). Orange: forecast median, 80% band (darker) and 90% band "
-                   "(lighter). Triangles: meals, sized by glycaemic load. Hatched: missing CGM, never interpolated.")
+        st.caption(
+            "Solid blue: observed CGM (past 4 h). Orange: forecast median, 80% band (darker) and 90% band "
+            "(lighter). Triangles: meals, sized by glycaemic load. Hatched: missing CGM, never interpolated."
+        )
 
     a_col, w_col = st.columns(2)
     with a_col:
@@ -59,8 +66,10 @@ def render() -> None:
         if not mine:
             st.write("No active alerts for this patient.")
         for a in mine:
-            common.md(f"{common.tier_badge(a.tier, a.event == 'unknown')} <b>{a.event}</b> · lead {a.lead_label} · "
-                      f"{a.reason}")
+            common.md(
+                f"{common.tier_badge(a.tier, a.event == 'unknown')} <b>{a.event}</b> · lead {a.lead_label} · "
+                f"{a.reason}"
+            )
             health.feedback_buttons(a, key=f"fv-{a.id}")
     with w_col:
         st.markdown("#### Why (top contributors)")
@@ -76,12 +85,18 @@ def render() -> None:
     st.markdown("#### FHIR export")
     bundle = fhir_export.build_bundle(state, fc)
     payload = fhir_export.to_json(bundle)
-    st.download_button("Download FHIR bundle (JSON)", payload, icon=":material/download:",
-                       file_name=f"madhutwin_{p.patient_id}_{state.now.astimezone(ts.IST):%Y%m%d_%H%M}.json",
-                       mime="application/fhir+json")
-    st.caption(f"FHIR {fhir_export.FHIR_VERSION} collection: Patient (pseudonymous, tagged synthetic), CGM "
-               "Observations (LOINC 99504-3, UCUM mg/dL), a RiskAssessment for spike/hypo and a preliminary "
-               "forecast Observation. Validated with fhir.resources before download.")
+    st.download_button(
+        "Download FHIR bundle (JSON)",
+        payload,
+        icon=":material/download:",
+        file_name=f"madhutwin_{p.patient_id}_{state.now.astimezone(ts.IST):%Y%m%d_%H%M}.json",
+        mime="application/fhir+json",
+    )
+    st.caption(
+        f"FHIR {fhir_export.FHIR_VERSION} collection: Patient (pseudonymous, tagged synthetic), CGM "
+        "Observations (LOINC 99504-3, UCUM mg/dL), a RiskAssessment for spike/hypo and a preliminary "
+        "forecast Observation. Validated with fhir.resources before download."
+    )
     with st.expander(f"Show bundle ({len(bundle['entry'])} resources)"):
         st.json(bundle, expanded=False)
 
