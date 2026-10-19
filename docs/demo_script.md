@@ -69,10 +69,10 @@ MADHUTWIN_DEMO=1 MADHUTWIN_BACKEND=mock streamlit run dashboard/app.py   # or MA
 ---
 
 ## Shot list (B-roll / screenshots)
-1. Alert queue, full page (`docs/figures/screenshot_alert_queue.jpg`)
+1. Alert queue, full page (`docs/figures/ui/alert_queue_light_1440.png`)
 2. Replay slider scrubbing 13:30 → 20:00 (screen recording)
 3. Forecast page with bands and meal markers
-4. What-if Combined, side-by-side (`docs/figures/screenshot_whatif_lab.jpg`)
+4. What-if Combined, side-by-side (`docs/figures/ui/whatif_light_1440.png`)
 5. What-if overlay toggle
 6. Why panel: attribution bars and reliability table
 7. FHIR bundle expander

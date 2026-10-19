@@ -151,7 +151,7 @@ def render() -> None:
                 width="stretch",
                 column_config={
                     "food": st.column_config.SelectboxColumn(
-                        "Food", options=sorted(label_to_food), required=True, width="medium"
+                        "Food", options=sorted(label_to_food), required=True, width=180
                     ),
                     "portion": st.column_config.NumberColumn(
                         "Portion",
@@ -160,7 +160,7 @@ def render() -> None:
                         step=0.25,
                         required=True,
                         help="In katori, roti (piece) or plate",
-                        width="small",
+                        width=72,
                     ),
                 },
             )

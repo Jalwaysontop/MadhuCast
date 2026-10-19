@@ -288,8 +288,10 @@ def triage_table(rows: Sequence[dict]) -> str:
             f"<td>{esc(r['event'])}</td><td>{prob}</td><td{conf_cls}>{conf}</td><td>{lead}</td>"
             f"<td{dq_cls}>{dq}</td><td class='muted' style='margin:0'>{esc(r['age'])}</td></tr>"
         )
-    return (f'<div class="mt-table-wrap" tabindex="0" role="region" aria-label="Alert queue table">'
-            f'<table class="mt-table"><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
+    return (
+        f'<div class="mt-table-wrap" tabindex="0" role="region" aria-label="Alert queue table">'
+        f'<table class="mt-table"><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
+    )
 
 
 def meal_chips(m) -> str:

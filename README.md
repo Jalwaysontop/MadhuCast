@@ -14,7 +14,7 @@
 | **Licence** | [Apache-2.0](LICENSE) (includes a patent grant, which suits health code) |
 | **Repository name** | Must be **`TeamName_CollegeName`** at submission (brief). It is developed as `MadhuTwin_TeamName/`. All paths are relative, so renaming is safe ([ADR-001](docs/decisions.md)). |
 
-![Alert queue](docs/figures/screenshot_alert_queue.jpg)
+![Alert queue](docs/figures/ui/alert_queue_light_1440.png)
 
 ---
 
@@ -57,7 +57,7 @@ Our 150–250-item Indian meal mapping is *table stakes, done openly*, not the s
 | F9 | FHIR R4B export (Patient, CGM Observations with LOINC 99504-3, RiskAssessment, forecast Observation) and a privacy-boundary diagram | `src/serving/fhir_export.py`, `docs/samples/fhir_bundle_example.json`, `docs/privacy_boundary.pdf` |
 | | Every number carries a provenance label: `REAL` / `SYNTHETIC` / `MOCK` / `MODEL ESTIMATE` | `dashboard/components/common.py` |
 
-![What-if lab](docs/figures/screenshot_whatif_lab.jpg)
+![What-if lab](docs/figures/ui/whatif_light_1440.png)
 
 ## Quickstart
 
@@ -93,6 +93,7 @@ The interface is a calm clinical instrument with one bold element, the **Twin Cu
   - `dashboard/components/kit.py` holds the components.
   - `dashboard/components/twin_morph.py` holds the What-if morph.
 - **Accessibility:** light and dark themes, both WCAG AA (`python scripts/check_contrast.py`). Visible focus and reduced-motion support.
+- **Screenshots:** every page at 1440×900 and 1280×720 in both themes is in `docs/figures/ui/` (`python scripts/ui_screenshots.py`).
 - **Further reading:** [`docs/design_notes.md`](docs/design_notes.md) (what we tried and rejected) and [`docs/design_system_rules.md`](docs/design_system_rules.md).
 
 ## Architecture

@@ -5,7 +5,7 @@ Speaker notes for the two-minute "design choices" moment in the video, and the r
 **Figma source of truth:** [MadhuTwin — Jamun UI](https://www.figma.com/design/lGkCcYYcV1PHiNWpD1pOjG). It has three pages:
 - *Foundations*: variables `Jamun / light`, `Jamun / dark` and `Jamun / size`, plus 11 text styles.
 - *Components*: Lucide icon set, TierBadge, ProvBadge, Button, PresetSegment, NavItem, VitalReadout.
-- *Screens*: Alert queue, Forecast (light and dark), What-if lab, Why.
+- *Screens*: Alert queue, Forecast (light and dark), What-if lab, Why, Model trust.
 
 Code tokens live in `dashboard/theme/tokens.py`.
 
@@ -67,3 +67,8 @@ In the What-if lab, changing a lever **morphs** the dashed magenta scenario curv
 - **Widget chrome:** the multiselect chips, slider handles and data editor follow Streamlit's components, themed but not redrawn. That's acceptable for a PoC.
 - **Sidebar navigation:** styled with CSS on `data-testid` hooks rather than built by us.
 - **Post-submission proposal:** a React + FastAPI front end. `src/serving/backend.py` already isolates the contract, so the migration would touch no model or data code. We are not starting it before the summit.
+
+## Visual QA
+- `python scripts/ui_screenshots.py` captures every page at 1440×900 and 1280×720 in light and dark (28 shots in `docs/figures/ui/`).
+- It drives the locally installed Chrome through Playwright, so no browser download is needed.
+- It also flips `prefers-color-scheme` mid-session and fails unless the page, the Plotly chart chrome and the morph iframe all change colour. The last run passed: the tick fill went from rgb(90, 98, 117) to rgb(163, 170, 184) on the Forecast page and in the What-if iframe.

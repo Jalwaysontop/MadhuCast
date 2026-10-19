@@ -58,13 +58,13 @@ def render() -> None:
             kit.Readout("HbA1c", f"{p.hba1c:.1f}", "%", LABS[0][4](p.hba1c, p.sex).capitalize(), badge=pb("hba1c")),
             kit.Readout("BMI", f"{p.bmi:.1f}", "kg/m²", LABS[2][4](p.bmi, p.sex).capitalize(), badge=pb("bmi")),
             kit.Readout(
-                "Twin status",
-                "Cold start" if cold else "Personalised",
-                "",
+                "Twin history",
+                f"{days:g}" if days is not None else "n/a",
+                "days of CGM" if days is not None else "",
                 (
-                    f"{days:g} days of CGM" + (f", under {COLD_START_DAYS}: wider uncertainty" if cold else "")
-                    if days is not None
-                    else "History length not provided"
+                    f"Cold start: under {COLD_START_DAYS} days, wider uncertainty"
+                    if cold
+                    else ("Personalised twin" if days is not None else "History length not provided")
                 ),
                 foot_tone="warn" if cold else None,
             ),

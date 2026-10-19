@@ -70,10 +70,10 @@ def render() -> None:
         ]
         items.append(
             kit.Readout(
-                "Coverage, 80% and 90%",
-                f"{cov.get('80', 0):.0%} / {cov.get('90', 0):.0%}",
-                "",
-                "Nominal 80% and 90%",
+                "Coverage, 80% interval",
+                f"{cov.get('80', 0) * 100:.0f}",
+                "%",
+                f"90% interval: {cov.get('90', 0):.0%}",
                 badge=_badge(slbl),
             )
         )

@@ -18,8 +18,15 @@ from playwright.sync_api import Page, sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "docs" / "figures" / "ui"
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-PAGES = [("alert_queue", ""), ("patient", "patient_card"), ("forecast", "forecast_view"), ("meals", "meal_timeline"),
-         ("whatif", "whatif_lab"), ("why", "explain_panel"), ("trust", "trust_page")]
+PAGES = [
+    ("alert_queue", ""),
+    ("patient", "patient_card"),
+    ("forecast", "forecast_view"),
+    ("meals", "meal_timeline"),
+    ("whatif", "whatif_lab"),
+    ("why", "explain_panel"),
+    ("trust", "trust_page"),
+]
 SIZES = [(1440, 900), (1280, 720)]
 
 
@@ -57,7 +64,8 @@ def theme_check(base: str, browser) -> list[str]:
     page = ctx.new_page()
 
     def probe() -> dict:
-        return page.evaluate("""() => {
+        return page.evaluate(
+            """() => {
             const q = s => document.querySelector(s);
             const fill = el => el ? getComputedStyle(el).fill : null;
             return {
@@ -67,7 +75,8 @@ def theme_check(base: str, browser) -> list[str]:
               tick: fill(q('.js-plotly-plot .xtick text')),
               grid: q('.js-plotly-plot .gridlayer path') ? getComputedStyle(q('.js-plotly-plot .gridlayer path')).stroke : null,
             };
-        }""")
+        }"""
+        )
 
     for path, label in (("forecast_view", "forecast"), ("whatif_lab", "what-if")):
         page.emulate_media(color_scheme="light")
