@@ -52,7 +52,7 @@ def stylesheet(mode: Mode = "light") -> str:
   --mt-motion: {MOTION_MS}ms;
 }}
 html, body, [data-testid="stAppViewContainer"] {{ font-family: var(--mt-font); }}
-[data-testid="stMain"] .block-container {{ padding-top: 1.25rem; max-width: 1360px; }}
+[data-testid="stMain"] .block-container {{ padding-top: 3.75rem; max-width: 1360px; }}
 .mt-num, [data-testid="stMetricValue"], [data-testid="stDataFrame"] {{ font-variant-numeric: tabular-nums; }}
 *:focus-visible {{ outline: 2px solid var(--mt-jamun) !important; outline-offset: 2px; }}
 @media (prefers-reduced-motion: reduce) {{ *, *::before, *::after {{ transition: none !important; animation: none !important; }} }}
@@ -79,7 +79,7 @@ html, body, [data-testid="stAppViewContainer"] {{ font-family: var(--mt-font); }
 .st-key-lever-tray [data-testid="stDataFrame"] {{ font-family: var(--mt-font-deva); }}
 
 /* ---------- header bar */
-.mt-header {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; padding: 12px 20px; background: var(--mt-surface);
+.mt-header {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; padding: 12px 20px; background: var(--mt-surface);
   border: 1px solid var(--mt-hairline); border-radius: 8px; margin-bottom: 4px; font-size: 14px; color: var(--mt-ink-muted); }}
 .mt-header b {{ color: var(--mt-ink); font-weight: 600; }}
 .mt-header .mt-pid {{ color: var(--mt-ink); font-weight: 700; font-size: 16px; }}
@@ -106,11 +106,11 @@ html, body, [data-testid="stAppViewContainer"] {{ font-family: var(--mt-font); }
 .mt-readout.alert {{ border-left: 3px solid var(--mt-warning); }}
 .mt-readout.alert.critical {{ border-left-color: var(--mt-critical); }}
 .mt-readout .mt-r-label {{ font-size: 14px; color: var(--mt-ink-muted); display: flex; gap: 6px; align-items: center; }}
-.mt-readout .mt-r-row {{ display: flex; align-items: baseline; gap: 6px; margin: 2px 0; }}
+.mt-readout .mt-r-row {{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 6px; margin: 2px 0; }}
 .mt-readout .mt-r-value {{ font-size: 39px; font-weight: 700; letter-spacing: -0.02em; line-height: 44px; color: var(--mt-ink); font-variant-numeric: tabular-nums; }}
 .mt-readout .mt-r-value.good {{ color: var(--mt-target); }}
 .mt-readout .mt-r-value.bad {{ color: var(--mt-critical); }}
-.mt-readout .mt-r-unit {{ font-size: 14px; font-weight: 500; color: var(--mt-ink-muted); }}
+.mt-readout .mt-r-unit {{ font-size: 14px; font-weight: 500; color: var(--mt-ink-muted); white-space: nowrap; }}
 .mt-readout .mt-r-foot {{ font-size: 12px; font-weight: 500; color: var(--mt-ink-muted); }}
 .mt-readout .mt-r-foot.warn {{ color: var(--mt-warning); font-weight: 600; }}
 .mt-strip {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--mt-surface); border: 1px solid var(--mt-hairline); border-radius: 8px; }}
@@ -126,8 +126,9 @@ html, body, [data-testid="stAppViewContainer"] {{ font-family: var(--mt-font); }
 /* ---------- triage table */
 .mt-table {{ width: 100%; border-collapse: separate; border-spacing: 0; background: var(--mt-surface); border: 1px solid var(--mt-hairline);
   border-radius: 8px; overflow: hidden; font-size: 14px; color: var(--mt-ink); font-variant-numeric: tabular-nums; }}
-.mt-table th {{ white-space: nowrap; background: var(--mt-sunken); color: var(--mt-ink-muted); font-size: 12px; font-weight: 500; text-align: left; padding: 10px 14px; }}
-.mt-table td {{ white-space: nowrap; padding: 11px 12px; border-top: 1px solid var(--mt-hairline); vertical-align: middle; }}
+.mt-table th {{ white-space: nowrap; background: var(--mt-sunken); color: var(--mt-ink-muted); font-size: 12px; font-weight: 500; text-align: left; padding: 10px 10px; }}
+.mt-table-wrap {{ overflow-x: auto; border-radius: 8px; }}
+.mt-table td {{ white-space: nowrap; padding: 11px 10px; border-top: 1px solid var(--mt-hairline); vertical-align: middle; }}
 .mt-table tr.critical td:first-child {{ box-shadow: inset 3px 0 0 var(--mt-critical); }}
 .mt-table .muted {{ color: var(--mt-ink-muted); font-size: 12px; margin-left: 6px; }}
 .mt-table .low {{ color: var(--mt-watch); }}
