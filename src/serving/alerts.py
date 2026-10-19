@@ -125,9 +125,8 @@ def stratum(cohort: str) -> str:
     return STRATUM_BY_COHORT.get(cohort, "high")
 
 
-def _lead(fc: Forecast, event: str, g_now: float | None) -> tuple[int | None, str]:
+def _lead(fc: Forecast, event: str, curve) -> tuple[int | None, str]:
     """Earliest predicted crossing: q50 first, then the band edge; else a horizon bucket."""
-    curve = ts.forecast_curve(fc, g_now)
     if event == "spike":
         t = ts.first_crossing(curve, "q50", 180, above=True) or ts.first_crossing(curve, "q90", 180, above=True)
     else:
@@ -150,13 +149,14 @@ def evaluate(inp: AlertInput, thresholds: dict, cfg: AlertConfig = AlertConfig()
     fired = tuple(k for k, v in flags.items() if v)
     out: list[Candidate] = []
 
+    curve = ts.forecast_curve(fc, inp.glucose_now)
+
     def cand(event: str, tier: Tier, prob: float | None, reason: str) -> Candidate:
-        lead_min, lead_label = _lead(fc, event, inp.glucose_now) if event != "unknown" else (None, "now")
+        lead_min, lead_label = _lead(fc, event, curve) if event != "unknown" else (None, "now")
         return Candidate(inp.patient_id, inp.cohort, event, tier, prob, fc.confidence, lead_min, lead_label,
                          fired, inp.data_quality, fc.model_version, reason)
 
     # ---- hypo (recall-first: never suppressed by confidence)
-    curve = ts.forecast_curve(fc, inp.glucose_now)
     q10_30 = curve.loc[curve["t_min"] <= 30, "q10"].min()
     rule_hypo = bool(flags.get("rule_net")) and (inp.glucose_now is None or inp.glucose_now <= 120)
     if inp.glucose_now is not None and inp.glucose_now < HYPO_THRESHOLD:

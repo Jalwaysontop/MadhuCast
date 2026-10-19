@@ -26,7 +26,6 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import ValidationError
 
-from src.serving import timeseries as ts
 from src.contracts import (
     FOOD_DB_COLUMNS,
     REPORT_CSV_COLUMNS,
@@ -38,6 +37,7 @@ from src.contracts import (
     PatientState,
     Scenario,
 )
+from src.serving import timeseries as ts
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"

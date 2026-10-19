@@ -99,18 +99,22 @@ class Inputs:
 def build_inputs(state: PatientState) -> Inputs:
     now = state.now
     t = np.arange(-PAST, HORIZON + 1, ts.STEP_MIN, dtype=float)
-    stamps = pd.DatetimeIndex([pd.Timestamp(now) + pd.Timedelta(minutes=float(x)) for x in t])
-    h = state.history.copy()
-    h["t"] = pd.to_datetime(h["t"], utc=True)
-    h = h.set_index("t")
-    past = h.reindex(stamps.tz_convert("UTC"), method="nearest", tolerance=pd.Timedelta(minutes=2))
-    mets = past["mets"].to_numpy(dtype=float)
-    mets = np.where(np.isnan(mets) | (t > 0), 1.3, mets)
+    h = state.history
+    rel = (pd.to_datetime(h["t"], utc=True).to_numpy("datetime64[ns]") - ts._now64(now)) / np.timedelta64(1, "m")
+    pos = np.rint((rel + PAST) / ts.STEP_MIN).astype(int)
+    ok = (pos >= 0) & (pos < len(t)) & (np.abs(rel - (pos * ts.STEP_MIN - PAST)) <= 2) & (rel <= 0)
+    mets = np.full(len(t), 1.3)
+    obs = np.full(len(t), np.nan)
+    hm = h["mets"].to_numpy(dtype=float)
+    hg = h["glucose"].to_numpy(dtype=float)
+    miss = h["missing_mask"].to_numpy(dtype=bool)
+    good = ok & ~np.isnan(hm)
+    mets[pos[good]] = hm[good]
+    seen = ok & ~miss
+    obs[pos[seen]] = hg[seen]
     for b in state.planned_activity:
         s = (b.start - now).total_seconds() / 60
         mets = np.where((t >= s) & (t < s + b.minutes), np.maximum(mets, b.mets), mets)
-    obs = past["glucose"].to_numpy(dtype=float)
-    obs = np.where(past["missing_mask"].fillna(True).astype(bool).to_numpy() | (t > 0), np.nan, obs)
     meals = np.array([[(m.t - now).total_seconds() / 60, m.gl, m.fibre_g, m.fat_g] for m in state.meals])
     sleep = ts.prior_sleep_hours(state.history, now)
     pr = state.profile
@@ -352,7 +356,7 @@ def _mock_whatif_sanity() -> pd.DataFrame:
         st = mock_data.get_state(pid, st.meals[idx].t)
         base = max(p.q50 for p in backend.predict(st, Scenario(), explain=False).trajectory)
 
-        def peak(sc: Scenario) -> float:
+        def peak(sc: Scenario, st=st) -> float:
             return max(p.q50 for p in backend.predict(st, sc, explain=False).trajectory)
 
         tests["more_carbs_raises_peak"].append(peak(Scenario(portion_scale=1.5)) > base)

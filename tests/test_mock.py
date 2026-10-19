@@ -65,7 +65,7 @@ def test_quantiles_ordered_and_bounded(hba1c, bmi, glucose, gl, fibre, fat):
     fc = backend.predict(make_state(gl=gl, fibre=fibre, fat=fat, hba1c=hba1c, bmi=bmi, glucose=glucose))
     for p in fc.trajectory:
         assert p.q05 <= p.q10 <= p.q50 <= p.q90 <= p.q95
-        assert 40 <= p.q05 and p.q95 <= 400
+        assert p.q05 >= 40 and p.q95 <= 400
     for h in (30, 60, 120):
         q = fc.horizon(h)
         assert q[0] <= q[1] <= q[2]

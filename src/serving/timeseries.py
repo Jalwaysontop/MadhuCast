@@ -30,7 +30,16 @@ def hhmm(ts: datetime) -> str:
 
 
 def _t64(history: pd.DataFrame) -> np.ndarray:
-    return pd.to_datetime(history["t"], utc=True).to_numpy(dtype="datetime64[ns]")
+    """History timestamps as naive-UTC datetime64[ns] (fast path for tz-aware columns)."""
+    col = history["t"]
+    if isinstance(col.dtype, pd.DatetimeTZDtype):
+        return col.to_numpy(dtype="datetime64[ns]")
+    return pd.to_datetime(col, utc=True).to_numpy(dtype="datetime64[ns]")
+
+
+def _window(history: pd.DataFrame, now: datetime, window_min: float) -> np.ndarray:
+    t, n = _t64(history), _now64(now)
+    return (t > n - np.timedelta64(int(window_min * 60), "s")) & (t <= n)
 
 
 def _now64(now: datetime) -> np.datetime64:
@@ -69,34 +78,32 @@ def stale_minutes(history: pd.DataFrame, now: datetime) -> float:
 
 def data_quality(history: pd.DataFrame, now: datetime, window_min: int = QUALITY_WINDOW_MIN) -> float:
     """Fraction of expected 5-min CGM samples present in the trailing window."""
-    t = pd.to_datetime(history["t"])
-    w = history[(t > pd.Timestamp(now) - pd.Timedelta(minutes=window_min)) & (t <= pd.Timestamp(now))]
+    w = history[_window(history, now, window_min)]
     expected = window_min / STEP_MIN
     present = int((~w["missing_mask"].astype(bool) & w["glucose"].notna()).sum())
     return float(min(1.0, present / expected))
 
 
 def stream_last_seen(history: pd.DataFrame, now: datetime) -> dict[str, datetime]:
-    h = _upto(history, now)
     out: dict[str, datetime] = {}
     cgm = last_glucose(history, now)
     if cgm:
         out["cgm"] = cgm[0]
-    wear = h[h["hr"].notna()]
-    if not wear.empty:
-        out["wearable"] = pd.Timestamp(wear["t"].iloc[-1]).to_pydatetime()
+    t = _t64(history)
+    idx = np.flatnonzero((t <= _now64(now)) & history["hr"].notna().to_numpy())
+    if len(idx):
+        out["wearable"] = pd.Timestamp(t[idx[-1]]).tz_localize("UTC").to_pydatetime()
     return out
 
 
 def glucose_slope(history: pd.DataFrame, now: datetime, window_min: int = 30) -> float | None:
     """Least-squares slope of observed glucose (mg/dL per min) over the trailing window."""
-    t = pd.to_datetime(history["t"])
-    w = history[(t > pd.Timestamp(now) - pd.Timedelta(minutes=window_min)) & (t <= pd.Timestamp(now))]
-    w = w[~w["missing_mask"].astype(bool) & w["glucose"].notna()]
-    if len(w) < 3:
+    g = history["glucose"].to_numpy(dtype=float)
+    m = _window(history, now, window_min) & ~history["missing_mask"].to_numpy(dtype=bool) & ~np.isnan(g)
+    if m.sum() < 3:
         return None
-    x = (pd.to_datetime(w["t"]) - pd.Timestamp(now)).dt.total_seconds().to_numpy() / 60
-    return float(np.polyfit(x, w["glucose"].to_numpy(dtype=float), 1)[0])
+    x = (_t64(history)[m] - _now64(now)) / np.timedelta64(1, "m")
+    return float(np.polyfit(x.astype(float), g[m], 1)[0])
 
 
 def night_window(now: datetime) -> tuple[datetime, datetime]:
@@ -109,11 +116,11 @@ def night_window(now: datetime) -> tuple[datetime, datetime]:
 def prior_sleep_hours(history: pd.DataFrame, now: datetime) -> float | None:
     """Hours flagged by the sleep *proxy* in the previous-night window."""
     start, end = night_window(now)
-    t = pd.to_datetime(history["t"])
-    w = history[(t >= pd.Timestamp(start)) & (t < pd.Timestamp(end))]
-    if w.empty:
+    t = _t64(history)
+    m = (t >= _now64(start)) & (t < _now64(end))
+    if not m.any():
         return None
-    return float((w["sleep_proxy"].fillna(0) >= 0.5).sum() * STEP_MIN / 60)
+    return float((history["sleep_proxy"].to_numpy(dtype=float)[m] >= 0.5).sum() * STEP_MIN / 60)
 
 
 def missing_runs(history: pd.DataFrame) -> list[tuple[datetime, datetime]]:

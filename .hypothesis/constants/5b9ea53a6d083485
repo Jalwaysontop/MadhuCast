@@ -1,0 +1,4 @@
+# file: /Users/aadvikchaturvedi/digital_twin/dashboard/app.py
+# hypothesis_version: 6.140.0
+
+[':material/badge:', ':material/science:', ':material/verified:', 'Alert Queue', 'Forecast', 'MadhuTwin', 'Meals', 'Model Trust', 'Patient', 'What-if Lab', 'Why', 'pages/alert_queue.py', 'pages/trust_page.py', 'pages/whatif_lab.py', 'wide', '🩸']

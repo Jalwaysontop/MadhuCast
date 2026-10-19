@@ -67,9 +67,8 @@ class PatientProfile(_Strict):
 
     @model_validator(mode="after")
     def _grs_is_synthetic(self) -> PatientProfile:
-        if self.genetic_risk_score is not None:
-            if self.provenance.get("genetic_risk_score") != Provenance.SYNTHETIC:
-                raise ValueError("genetic_risk_score must carry SYNTHETIC provenance")
+        if self.genetic_risk_score is not None and self.provenance.get("genetic_risk_score") != Provenance.SYNTHETIC:
+            raise ValueError("genetic_risk_score must carry SYNTHETIC provenance")
         return self
 
 

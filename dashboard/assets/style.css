@@ -1,0 +1,27 @@
+/* MadhuTwin dashboard. Badges always carry icon + text; colours are Okabe-Ito based and
+   use white or near-black text chosen for contrast in both light and dark themes. */
+.mt-badge {
+  display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.78rem;
+  font-weight: 700; letter-spacing: 0.02em; line-height: 1.5; white-space: nowrap; vertical-align: middle;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.tier-critical { background: #D55E00; color: #fff; }
+.tier-warning  { background: #E69F00; color: #1a1a1a; }
+.tier-watch    { background: #56B4E9; color: #1a1a1a; }
+.tier-none     { background: #009E73; color: #fff; }
+.tier-unknown  { background: #6b6b6b; color: #fff; border-style: dashed; }
+.prov-real           { background: #009E73; color: #fff; }
+.prov-synthetic      { background: #CC79A7; color: #1a1a1a; }
+.prov-mock           { background: #F0E442; color: #1a1a1a; }
+.prov-model-estimate { background: #0072B2; color: #fff; }
+.mt-header {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; padding: 8px 12px;
+  border-radius: 8px; border: 1px solid rgba(128, 128, 128, 0.35); margin-bottom: 10px; font-size: 0.92rem;
+}
+.mt-h-time { margin-left: auto; opacity: 0.8; }
+.mt-footer { font-size: 0.82rem; opacity: 0.85; line-height: 1.9; }
+.mt-chip {
+  display: inline-block; padding: 0 7px; margin: 0 4px 2px 0; border-radius: 6px; font-size: 0.78rem;
+  border: 1px solid rgba(128, 128, 128, 0.45);
+}
+.mt-delta-note { font-size: 0.85rem; opacity: 0.85; }
