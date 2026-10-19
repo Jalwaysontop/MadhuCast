@@ -26,6 +26,7 @@ from typing import Any, Literal
 import pandas as pd
 from pydantic import ValidationError
 
+from src.serving import timeseries as ts
 from src.contracts import (
     FOOD_DB_COLUMNS,
     REPORT_CSV_COLUMNS,
@@ -113,23 +114,16 @@ def _real_state(pid: str, now: datetime | None) -> PatientState:
     meals = [_validate(Meal, m, f"P3:{meals_path.name}") for m in meals_raw]
     if now is None:
         now = hist["t"].iloc[-1].to_pydatetime()
-    hist = hist[hist["t"] <= now]
-    window = hist[hist["t"] > now - pd.Timedelta(hours=24)]
-    expected = max(len(window), 1)
-    dq = float((~window["missing_mask"].astype(bool)).sum()) / expected
-    last_seen = {
-        "cgm": window.loc[~window["missing_mask"].astype(bool), "t"].max(),
-        "wearable": window.loc[window["hr"].notna(), "t"].max(),
-    }
+    hist = hist[hist["t"] <= pd.Timestamp(now)].reset_index(drop=True)
     return _validate(
         PatientState,
         {
             "profile": profile,
-            "history": hist.reset_index(drop=True),
+            "history": hist,
             "meals": [m for m in meals if m.t <= now],
             "now": now,
-            "data_quality": dq,
-            "stream_last_seen": {k: v.to_pydatetime() for k, v in last_seen.items() if pd.notna(v)},
+            "data_quality": ts.data_quality(hist, now),
+            "stream_last_seen": ts.stream_last_seen(hist, now),
         },
         f"P3:state:{pid}",
     )
@@ -145,6 +139,7 @@ def get_state(pid: str, now: datetime | None = None) -> PatientState:
 
 
 def resolve_meal(items: list[dict[str, Any]]) -> Meal:
+    """Callers overwrite ``t`` and ``label`` on the returned Meal."""
     if data_mode() == "mock":
         from src.serving import mock_data
 
@@ -188,14 +183,29 @@ def _real_predictor():
         raise ContractError("P2:predict_api", f"src/serving/predict_api.py not importable: {e}") from e
 
 
-def predict(state: PatientState, scenario: Scenario | None = None) -> Forecast:
-    scenario = scenario or Scenario()
+def _provider_predict(state: PatientState, scenario: Scenario, explain: bool) -> Forecast:
     if model_mode() == "mock":
         from src.serving import mock_predict
 
-        return mock_predict.predict(state, scenario)
+        return mock_predict.predict(state, scenario, explain=explain)
     raw = _real_predictor().predict(state, scenario)
     return raw if isinstance(raw, Forecast) else _validate(Forecast, raw, "P2:predict")
+
+
+def run_scenario(state: PatientState, scenario: Scenario | None = None, *,
+                 explain: bool = True) -> tuple[PatientState, Forecast]:
+    """Apply what-if levers (P1, ADR-005), then predict. Returns the evaluated state too,
+    because an earlier meal-time shift moves the evaluation time back."""
+    from src.serving import scenario as scenario_mod
+
+    scenario = scenario or Scenario()
+    evaluated = scenario_mod.apply(state, scenario, resolve_meal)
+    return evaluated, _provider_predict(evaluated, scenario, explain)
+
+
+def predict(state: PatientState, scenario: Scenario | None = None, *, explain: bool = True) -> Forecast:
+    """``explain=False`` lets the mock skip attributions (alert replay); real models ignore it."""
+    return run_scenario(state, scenario, explain=explain)[1]
 
 
 def load_report(name: str) -> tuple[Any | None, str]:
@@ -221,6 +231,54 @@ def load_report(name: str) -> tuple[Any | None, str]:
     if missing:
         raise ContractError(f"P2:reports/{path.name}", f"missing columns {missing}")
     return df, "MODEL_ESTIMATE"
+
+
+def thresholds() -> tuple[dict, bool]:
+    """(thresholds, calibrated). Falls back to placeholders flagged UNCALIBRATED."""
+    from src.serving.mock_predict import mock_thresholds
+
+    payload, label = load_report("thresholds")
+    if payload is None:
+        return mock_thresholds(), False
+    return payload, bool(payload.get("calibrated", label == "MODEL_ESTIMATE"))
+
+
+# --------------------------------------------------------------------------- replay window
+
+
+def day_meals(pid: str, now: datetime | None = None) -> list[Meal]:
+    """All meals on the day of ``now`` (including ones after it), for the meal timeline."""
+    if data_mode() == "mock":
+        from src.serving import mock_data
+
+        return mock_data.day_meals(pid)
+    meals_path = MEALS_DIR / f"{pid}.json"
+    if not meals_path.exists():
+        return []
+    meals = [_validate(Meal, m, f"P3:{meals_path.name}") for m in json.loads(meals_path.read_text())]
+    if now is None:
+        return meals
+    day = now.astimezone(ts.IST).date()
+    return [m for m in meals if m.t.astimezone(ts.IST).date() == day]
+
+
+def time_window() -> tuple[datetime, datetime, datetime]:
+    """(replay_start, replay_end, default_now) for the global time slider."""
+    if data_mode() == "mock":
+        from src.serving import mock_data
+
+        return mock_data.REPLAY_START, mock_data.DAY_END, mock_data.DEMO_NOW
+    ends = []
+    for pid in list_patients():
+        path = TIMESERIES_DIR / f"{pid}.parquet"
+        if path.exists():
+            t = pd.to_datetime(pd.read_parquet(path, columns=["t"])["t"], utc=True)
+            ends.append(t.max())
+    if not ends:
+        raise ContractError("P3:timeseries", "no time series found")
+    end = min(ends).to_pydatetime()
+    start = end - pd.Timedelta(hours=18)
+    return start.to_pydatetime() if hasattr(start, "to_pydatetime") else start, end, end
 
 
 def clear_caches() -> None:

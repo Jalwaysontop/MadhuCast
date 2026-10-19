@@ -1,0 +1,4 @@
+# file: /Users/aadvikchaturvedi/digital_twin/src/serving/scenario.py
+# hypothesis_version: 6.140.0
+
+[0.0, 0.5, 0.95, 1.0, 1.3, 2.0, 3.5, 5.0, ':', 'Combined', 'Rice → millet roti', 'Short sleep (5 h)', 'biryani', 'carbs_g', 'fat_g', 'fibre_g', 'food', 'gl', 'hr', 'items', 'label', 'meal_index', 'mets', 'millet roti (bajra)', 'piece', 'portion', 'protein_g', 'q10', 'q50', 'q90', 'rice', 'sleep_proxy', 't', 'unit']

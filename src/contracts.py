@@ -88,12 +88,24 @@ class Meal(_Strict):
     _tz = field_validator("t")(_require_tz)
 
 
+class ActivityBlock(_Strict):
+    """A planned or counterfactual activity bout (e.g. a post-meal walk)."""
+
+    start: datetime
+    minutes: int = Field(ge=1, le=180)
+    mets: float = Field(default=3.5, ge=1, le=12)
+    kind: str = "walk"
+
+    _tz = field_validator("start")(_require_tz)
+
+
 class PatientState(_Strict):
     """The ``patient`` argument to ``predict()``.
 
     ``history`` is a pandas DataFrame on a 5-min grid covering at least 4 h, with
     columns HISTORY_COLUMNS. ``missing_mask`` is True where the glucose sample
-    is absent (glucose may then be NaN).
+    is absent (glucose may then be NaN). ``meals`` may include planned meals
+    with ``t > now`` (what-if meal-time shifts).
     """
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
@@ -105,6 +117,7 @@ class PatientState(_Strict):
     data_quality: float | None = Field(default=None, ge=0, le=1)
     stream_last_seen: dict[str, datetime] | None = None
     uplink_mode: str | None = None  # requested addition: e.g. "ALERT" / "ROUTINE" from P3's edge sim
+    planned_activity: list[ActivityBlock] = []  # requested addition: future bouts (what-if walks)
 
     _tz = field_validator("now")(_require_tz)
 

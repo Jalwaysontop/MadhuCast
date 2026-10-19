@@ -1,0 +1,4 @@
+# file: /Users/aadvikchaturvedi/digital_twin/src/explain/templates.py
+# hypothesis_version: 6.140.0
+
+[-0.5, 0.0, 0.01, 0.5, 0.99, 1.0, 1.25, 1.5, 5.4, 7.0, 7.5, 10.0, 23.0, '%', '+20 min walk', '<1%', '>99%', 'Activity', 'Age', 'BMI', 'Current glucose', 'EHR', 'HbA1c', 'METs', 'Meal', 'Other', 'Recent glucose', 'Recent meal fat', 'Recent meal fibre', 'Sleep (proxy)', 'Time since last meal', 'age', 'bmi', 'bpm', 'g', 'glucose_now', 'glucose_slope_30m', 'h', 'hba1c', 'hr_mean_1h', 'kg/m²', 'lower', 'lowering', 'meal_carbs', 'meal_fat', 'meal_fibre', 'meal_gl', 'mets_1h', 'mg/dL', 'mg/dL/min', 'min', 'minute', 'minutes_since_meal', 'portion', 'portion +25%', 'q50', 'raise', 'raising', 's', 'sleep', 'sleep_hours_prev', 'walk', 'walk_minutes', 'years']
