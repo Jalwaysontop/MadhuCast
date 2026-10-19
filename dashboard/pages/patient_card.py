@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import pandas as pd
 import streamlit as st
 
-from dashboard.components import common
+from dashboard.components import common, kit
 
 common.init_session()
 COLD_START_DAYS = 3
@@ -48,39 +48,39 @@ def render() -> None:
     p = state.profile
     prov = p.provenance
     st.title(f"Patient {p.patient_id}")
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Cohort", p.cohort.upper())
-    c2.metric("Age / sex", f"{p.age} {p.sex}")
-    c3.metric("HbA1c", f"{p.hba1c:.1f}%")
-    c4.metric("BMI", f"{p.bmi:.1f}")
-
     days = p.history_days
-    if days is not None and days < COLD_START_DAYS:
-        st.warning(
-            f"Twin status: **limited history** ({days:g} days of CGM, under {COLD_START_DAYS}). Cold start: "
-            "forecasts lean on population patterns and uncertainty is wider.",
-            icon="🧊",
-        )
-    else:
-        st.success(
-            (
-                f"Twin status: personalised ({days:g} days of history)"
-                if days is not None
-                else "Twin status: history length not provided"
+    cold = days is not None and days < COLD_START_DAYS
+    pb = lambda f: common.prov_badge(prov[f]) if prov.get(f) else ""  # noqa: E731
+    kit.readouts(
+        [
+            kit.Readout("Cohort", "T2D" if p.cohort == "t2d" else p.cohort.capitalize(), "", "Diagnosis band"),
+            kit.Readout("Age, sex", f"{p.age}", "years", "Female" if p.sex == "F" else "Male", badge=pb("age")),
+            kit.Readout("HbA1c", f"{p.hba1c:.1f}", "%", LABS[0][4](p.hba1c, p.sex).capitalize(), badge=pb("hba1c")),
+            kit.Readout("BMI", f"{p.bmi:.1f}", "kg/m²", LABS[2][4](p.bmi, p.sex).capitalize(), badge=pb("bmi")),
+            kit.Readout(
+                "Twin status",
+                "Cold start" if cold else "Personalised",
+                "",
+                (
+                    f"{days:g} days of CGM" + (f", under {COLD_START_DAYS}: wider uncertainty" if cold else "")
+                    if days is not None
+                    else "History length not provided"
+                ),
+                foot_tone="warn" if cold else None,
             ),
-            icon="🧬",
-        )
-
-    left, right = st.columns([3, 2])
-    with left:
-        st.markdown("#### Labs")
+        ]
+    )
+    st.write("")
+    left, right = st.columns([3, 2], gap="medium")
+    with left, st.container(key="panel-labs"):
+        st.subheader("Labs")
         rows = [
             {
                 "Test": label,
                 "Value": f"{getattr(p, key):g} {unit}",
                 "Status": fn(getattr(p, key), p.sex),
                 "Reference": ref,
-                "Provenance": (prov.get(key) or "n/a").value if prov.get(key) else "n/a",
+                "Provenance": prov[key].value.capitalize() if prov.get(key) else "n/a",
             }
             for key, label, unit, ref, fn in LABS
         ]
@@ -92,39 +92,43 @@ def render() -> None:
                     "Value": f"{v:g} mg/dL",
                     "Status": fn(v, p.sex),
                     "Reference": f"{ref} mg/dL",
-                    "Provenance": prov["lipids"].value if prov.get("lipids") else "n/a",
+                    "Provenance": prov["lipids"].value.capitalize() if prov.get("lipids") else "n/a",
                 }
             )
         st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
-        st.caption("Reference ranges are general adult guidance, shown for orientation only.")
-
-        st.markdown("#### Comorbidities")
-        st.write(", ".join(p.comorbidities) or "None recorded")
-        st.markdown("#### Medications *(display only)*")
-        st.write(", ".join(p.medications) or "None recorded")
-        st.caption("Medications are never a what-if lever, by design.")
-
-    with right:
-        st.markdown("#### Genetic risk score")
+        kit.caption("Reference ranges are general adult guidance, shown for orientation only.")
+        kit.md(
+            kit.definition_list(
+                [
+                    ("Comorbidities", ", ".join(p.comorbidities) or "None recorded", ""),
+                    ("Medications, display only", ", ".join(p.medications) or "None recorded", ""),
+                ]
+            )
+        )
+        kit.caption("Medications are never a what-if lever, by design.")
+    with right, st.container(key="panel-identity"):
+        st.subheader("Synthetic parts, disclosed")
+        rows = []
         if p.genetic_risk_score is not None:
-            common.md(f"<b>{p.genetic_risk_score:.2f}</b> (0–1 scale) {common.prov_badge('SYNTHETIC')}")
-            st.caption("Clearly synthetic. No genotype data is used anywhere in this project.")
-        else:
-            st.write("Not provided")
-        st.markdown("#### Pairing disclosure")
+            rows.append(("Genetic risk score (0–1)", f"{p.genetic_risk_score:.2f}", common.prov_badge("SYNTHETIC")))
+        kit.md(kit.definition_list(rows) if rows else "")
+        kit.caption("No genotype data is used anywhere in this project.")
         pr = p.pairing or {}
         if pr:
-            st.info(
+            kit.disclaimer(
                 f"EHR synthetically paired to CGMacros participant #{pr.get('cgmacros_id', '?')} by nearest "
-                f"neighbour on {'/'.join(pr.get('match_on', ['status', 'age', 'BMI', 'HbA1c']))} bands; "
+                f"neighbour on {', '.join(pr.get('match_on', ['status', 'age', 'BMI', 'HbA1c']))} bands, "
                 f"distance {pr.get('match_distance', '?')}. The EHR and the CGM trace are not from the same "
-                "real person.",
-                icon="🔗",
+                "real person."
             )
         else:
-            st.write("No pairing metadata provided.")
-        st.markdown("#### Field provenance")
-        common.md(" ".join(f"<span class='mt-chip'>{k}</span>{common.prov_badge(v)}" for k, v in sorted(prov.items())))
+            kit.empty_state("No pairing metadata.", "Person 3's profile JSON should include a pairing block.")
+        kit.md(
+            '<div style="font-size:14px;font-weight:600;margin:16px 0 6px">Field provenance</div>'
+            + " ".join(
+                f"<span class='mt-chip'>{kit.esc(k)}</span>{common.prov_badge(v)}" for k, v in sorted(prov.items())
+            )
+        )
 
 
 common.guard(render)

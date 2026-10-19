@@ -75,7 +75,8 @@ profiles = dict(
 def test_more_carbs_raises_peak(hba1c, bmi, glucose, gl, fibre, fat, extra):
     lo = make_state(gl=gl, fibre=fibre, fat=fat, hba1c=hba1c, bmi=bmi, glucose=glucose)
     hi = make_state(gl=gl + extra, fibre=fibre, fat=fat, hba1c=hba1c, bmi=bmi, glucose=glucose)
-    assert peak(hi) > peak(lo)
+    # strictly higher, unless both are clipped at the 400 mg/dL sensor ceiling
+    assert peak(hi) > peak(lo) or peak(lo) >= mock_predict.G_MAX - 1e-6
 
 
 @settings(max_examples=40, deadline=None)

@@ -33,7 +33,7 @@ def figures() -> dict:
             fc,
             label="Baseline",
             y_range=yr,
-            compare=(s_state, s_fc, "Rice → millet roti + 20 min walk", charts.GREEN),
+            compare=(s_state, s_fc, "Rice → millet roti + 20 min walk", "scenario"),
             title="What-if: rice → millet roti + 20 min walk (MOCK model estimate)",
         ),
         "attributions_P-010": charts.attribution_figure(fc.shap_values),

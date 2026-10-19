@@ -83,6 +83,18 @@ Switching to teammates' outputs needs a config flag only, with no page changes:
 
 The sidebar footer always shows which backend is active.
 
+## Design: "Jamun"
+
+The interface is a calm clinical instrument with one bold element, the **Twin Curve**: glucose history flowing into a translucent jamun forecast cone over the 70–180 mg/dL target band. The colour comes from jamun, a fruit traditionally linked with blood-sugar care in Indian households.
+
+- **Figma:** [MadhuTwin — Jamun UI](https://www.figma.com/design/lGkCcYYcV1PHiNWpD1pOjG). Variables, components and screens.
+- **Code:**
+  - `dashboard/theme/` holds the tokens, the generated CSS and the Plotly templates.
+  - `dashboard/components/kit.py` holds the components.
+  - `dashboard/components/twin_morph.py` holds the What-if morph.
+- **Accessibility:** light and dark themes, both WCAG AA (`python scripts/check_contrast.py`). Visible focus and reduced-motion support.
+- **Further reading:** [`docs/design_notes.md`](docs/design_notes.md) (what we tried and rejected) and [`docs/design_system_rules.md`](docs/design_system_rules.md).
+
 ## Architecture
 
 ![Architecture](docs/architecture_diagram.png)
@@ -137,7 +149,7 @@ The CGM LOINC code **99504-3** (interstitial-fluid glucose, mass/volume) was che
 ## Tests and quality gates
 
 ```bash
-pytest -q                 # 84 unit, property (Hypothesis) and AppTest smoke tests on the mock backend
+pytest -q                 # 89 unit, property (Hypothesis), theme/contrast and AppTest smoke tests
 pytest -q -m contract     # integration gate: the same contract assertions against MADHUTWIN_BACKEND=real
 ruff check . && black --check .
 ```

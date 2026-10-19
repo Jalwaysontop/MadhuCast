@@ -5,7 +5,6 @@ Pages read data only through the cached wrappers here, which call src.serving.ba
 
 from __future__ import annotations
 
-import html
 import json
 import os
 from collections.abc import Callable
@@ -14,7 +13,11 @@ from pathlib import Path
 from typing import Any
 
 import streamlit as st
+import streamlit.components.v1 as components
 
+from dashboard.components import kit
+from dashboard.theme import css, plotly_template
+from dashboard.theme.tokens import Mode
 from src.contracts import ContractError, Forecast, PatientState, Provenance, Scenario
 from src.serving import alerts as al
 from src.serving import backend
@@ -28,12 +31,7 @@ WHATIF_DISCLAIMER = (
     "Not medical advice. Medication changes are intentionally excluded from what-if."
 )
 
-TIER_STYLE = {  # icon + text, never colour alone
-    al.Tier.CRITICAL: ("‼", "CRITICAL", "tier-critical"),
-    al.Tier.WARNING: ("▲", "WARNING", "tier-warning"),
-    al.Tier.WATCH: ("●", "WATCH", "tier-watch"),
-    al.Tier.NONE: ("✓", "NO ALERT", "tier-none"),
-}
+TIER_NAME = {al.Tier.CRITICAL: "CRITICAL", al.Tier.WARNING: "WARNING", al.Tier.WATCH: "WATCH", al.Tier.NONE: "CLEAR"}
 PROV_HELP = {
     "REAL": "Measured data from an open dataset",
     "SYNTHETIC": "Simulated (e.g. Synthea EHR, synthetic genetic risk score, Indian meal augmentation)",
@@ -83,9 +81,15 @@ def pid() -> str | None:
 
 
 def load_css() -> None:
-    css = ASSETS / "style.css"
-    if css.exists():
-        st.markdown(f"<style>{css.read_text()}</style>", unsafe_allow_html=True)
+    """Inject the Jamun stylesheet for the active theme and register the Plotly templates."""
+    plotly_template.register()
+    st.markdown(f"<style>{css.stylesheet(kit.mode())}</style>", unsafe_allow_html=True)
+    with st.container(key="theme-sync"):
+        components.html(css.THEME_SYNC_JS, height=0)
+
+
+def theme() -> Mode:
+    return kit.mode()
 
 
 # --------------------------------------------------------------------------- cached backend
@@ -148,6 +152,11 @@ def snapshot(at: datetime | None = None, step_min: int = 15) -> al.Snapshot | No
     return past[-1] if past else None
 
 
+def snapshots_until(at: datetime | None = None, step_min: int = 15) -> list[al.Snapshot]:
+    at = at or now()
+    return [s for s in _replay(mode_key(), step_min) if s.now <= at]
+
+
 def report(name: str) -> tuple[Any, str]:
     return _report(name, mode_key())
 
@@ -174,66 +183,70 @@ def patient_alerts(state: PatientState, fc: Forecast) -> list[al.Candidate]:
     return al.evaluate(al.AlertInput.from_state(state, fc), thr)
 
 
-# --------------------------------------------------------------------------- badges
-
-
-def badge(text: str, cls: str, title: str = "") -> str:
-    return f'<span class="mt-badge {cls}" title="{html.escape(title)}">{html.escape(text)}</span>'
+# --------------------------------------------------------------------------- badges (delegate to the kit)
 
 
 def prov_badge(p: Provenance | str) -> str:
-    v = p.value if isinstance(p, Provenance) else str(p)
-    label = "MODEL ESTIMATE" if v == "MODEL_ESTIMATE" else v
-    return badge(label, f"prov-{v.lower().replace('_', '-')}", PROV_HELP.get(v, ""))
+    return kit.provenance_badge(p.value if isinstance(p, Provenance) else str(p))
 
 
 def tier_badge(tier: al.Tier, unknown: bool = False) -> str:
-    if unknown:
-        return badge("? UNKNOWN", "tier-unknown", "Data missing or stale: risk cannot be assessed")
-    icon, text, cls = TIER_STYLE[tier]
-    return badge(f"{icon} {text}", cls)
+    return kit.tier_badge("UNKNOWN" if unknown else TIER_NAME[tier])
 
 
 def md(html_str: str) -> None:
-    st.markdown(html_str, unsafe_allow_html=True)
+    kit.md(html_str)
 
 
 def risk_level(state: PatientState, fc: Forecast) -> tuple[str, str]:
-    """(label, css class) for the header. Stale data → UNKNOWN, never LOW."""
+    """(label, tier) for the header pill. Stale data → 'Risk unknown', never low."""
     cands = patient_alerts(state, fc)
     if any(c.event == "unknown" for c in cands):
-        return "UNKNOWN", "tier-unknown"
+        return "Risk unknown", "UNKNOWN"
     top = max((c.tier for c in cands), default=al.Tier.NONE)
     return {
-        al.Tier.CRITICAL: ("CRITICAL", "tier-critical"),
-        al.Tier.WARNING: ("HIGH", "tier-warning"),
-        al.Tier.WATCH: ("ELEVATED", "tier-watch"),
-        al.Tier.NONE: ("LOW", "tier-none"),
+        al.Tier.CRITICAL: ("Critical risk", "CRITICAL"),
+        al.Tier.WARNING: ("High risk", "WARNING"),
+        al.Tier.WATCH: ("Elevated risk", "WATCH"),
+        al.Tier.NONE: ("Low risk", "CLEAR"),
     }[top]
 
 
 def dq_label(dq: float | None) -> tuple[str, str]:
+    """(text, tier) for data quality."""
     if dq is None:
-        return "UNKNOWN", "tier-unknown"
+        return "unknown", "UNKNOWN"
     if dq >= 0.9:
-        return f"OK ({dq:.0%})", "tier-none"
+        return f"OK, {dq:.0%}", "CLEAR"
     if dq >= 0.6:
-        return f"DEGRADED ({dq:.0%})", "tier-watch"
-    return f"POOR ({dq:.0%})", "tier-warning"
+        return f"Degraded, {dq:.0%}", "WATCH"
+    return f"Poor, {dq:.0%}", "WARNING"
+
+
+def backend_text() -> str:
+    b = backend.describe()
+    return (
+        b["data"].capitalize() if b["data"] == b["model"] else f"data {b['data'].lower()}, model {b['model'].lower()}"
+    )
 
 
 # --------------------------------------------------------------------------- chrome
 
 
 def error_card(e: Exception) -> None:
+    """Errors state what happened and how to fix it. They never apologise."""
     if isinstance(e, ContractError):
+        fix = (
+            "Check the teammate's output against src/contracts.py, or switch that subsystem back to mock "
+            "(MADHUTWIN_DATA=mock or MADHUTWIN_MODEL=mock) to preview."
+        )
         st.error(
-            f"**Contract error from {e.source}.** A teammate's output did not match `src/contracts.py`, so "
-            f"this view is not shown rather than shown wrong.\n\n```\n{e.detail[:1500]}\n```",
-            icon="🚫",
+            f"**{e.source} does not match the contract, so this view is held back.** {fix}\n\n"
+            f"```\n{e.detail[:1200]}\n```",
+            icon=":material/report:",
         )
     else:
-        st.error(f"**Could not render this view:** {e}", icon="🚫")
+        st.error(f"**This view could not render:** {e}", icon=":material/report:")
 
 
 def guard(fn: Callable[[], None]) -> None:
@@ -246,9 +259,10 @@ def guard(fn: Callable[[], None]) -> None:
 
 def sidebar() -> None:
     init_session()
+    logo = ASSETS / "logo.svg"
+    if logo.exists():
+        st.logo(str(logo), icon_image=str(ASSETS / "mark.svg"), size="large")
     with st.sidebar:
-        st.markdown("### MadhuTwin")
-        st.caption("T2D digital twin · research PoC")
         try:
             pids = patients()
         except ContractError as e:
@@ -280,20 +294,27 @@ def sidebar() -> None:
         cur = min(range(len(opts)), key=lambda i: abs((opts[i] - now()).total_seconds()))
         if st.session_state.get("now_slider") not in tlabels:
             st.session_state.now_slider = tlabels[cur]
-        chosen = st.select_slider("Replay time (scrubs 'now' for every page)", options=tlabels, key="now_slider")
+        chosen = st.select_slider(
+            "Replay time",
+            options=tlabels,
+            key="now_slider",
+            help="Scrubs 'now' for every page. Times are IST (Asia/Kolkata).",
+        )
         st.session_state.now = opts[tlabels.index(chosen)]
         if DEMO:
-            st.info("Demo mode: seed, patient and replay time pinned for a reproducible video.", icon="🎬")
-        st.divider()
+            kit.caption("Demo mode: seed, patient and replay time are pinned so the video is reproducible.")
         b = backend.describe()
-        st.caption(f"Backend · data **{b['data']}** · model **{b['model']}**")
-        st.caption("Times shown in IST (Asia/Kolkata).")
+        kit.md(
+            f'<div class="mt-caption" style="margin-top:8px">Backend &nbsp;'
+            f'{kit.provenance_badge("MOCK") if b["data"] == "MOCK" else kit.provenance_badge("REAL")} data &nbsp;'
+            f'{kit.provenance_badge("MOCK") if b["model"] == "MOCK" else kit.provenance_badge("MODEL_ESTIMATE")} model</div>'
+        )
 
 
 def _patient_label(p: str) -> str:
     try:
         st_ = get_state(p)
-        return f"{p} · {st_.profile.cohort.upper()} · {st_.profile.age}{st_.profile.sex}"
+        return f"{p}  {st_.profile.cohort.upper() if st_.profile.cohort == 't2d' else st_.profile.cohort.capitalize()}, {st_.profile.age} {st_.profile.sex}"
     except Exception:
         return p
 
@@ -306,30 +327,22 @@ def header() -> None:
     except ContractError as e:
         error_card(e)
         return
-    risk, rcls = risk_level(state, fc)
-    dq, dcls = dq_label(state.data_quality)
-    b = backend.describe()
-    backend_txt = b["data"] if b["data"] == b["model"] else f"data {b['data']} / model {b['model']}"
-    md(
-        '<div class="mt-header">'
-        f'<span class="mt-h-item"><b>Patient</b> {html.escape(state.profile.patient_id)}</span>'
-        f'<span class="mt-h-item"><b>Risk</b> {badge(risk, rcls)}</span>'
-        f'<span class="mt-h-item"><b>Data quality</b> {badge(dq, dcls)}</span>'
-        f'<span class="mt-h-item"><b>Mode</b> {html.escape(state.uplink_mode or "n/a")}</span>'
-        f'<span class="mt-h-item"><b>Backend</b> {html.escape(backend_txt)}</span>'
-        f'<span class="mt-h-item mt-h-time"><b>Now</b> {ts.hhmm(state.now)} IST</span>'
-        "</div>"
+    cohort = {"t2d": "Type 2 diabetes", "prediabetes": "Prediabetes", "healthy": "No diabetes"}[state.profile.cohort]
+    kit.header_bar(
+        state.profile.patient_id,
+        cohort,
+        risk_level(state, fc),
+        state.data_quality,
+        state.uplink_mode,
+        backend_text(),
+        ts.hhmm(state.now),
     )
 
 
 def footer() -> None:
     st.divider()
-    legend = " ".join(prov_badge(p) for p in ("REAL", "SYNTHETIC", "MOCK", "MODEL_ESTIMATE"))
-    md(
-        f'<div class="mt-footer">Provenance: {legend}<br><b>{DISCLAIMER_FOOTER}</b> '
-        "Model estimates are learned from observational data and are not causal effects.</div>"
-    )
+    kit.footer()
 
 
 def disclaimer() -> None:
-    st.warning(WHATIF_DISCLAIMER, icon="⚠️")
+    kit.disclaimer(WHATIF_DISCLAIMER)

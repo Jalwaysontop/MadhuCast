@@ -1,0 +1,60 @@
+# Jamun theme (mirrors dashboard/theme/tokens.py and the Figma file "MadhuTwin — Jamun UI").
+[theme]
+base = "light"
+font = "Hanken Grotesk:https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+headingFont = "Hanken Grotesk:https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap"
+headingFontWeights = [700, 600, 600]
+headingFontSizes = ["1.9375rem", "1.5625rem", "1.25rem"]
+baseFontSize = 16
+baseRadius = "8px"
+buttonRadius = "8px"
+showWidgetBorder = true
+showSidebarBorder = true
+
+[theme.light]
+primaryColor = "#5B2A6E"
+backgroundColor = "#F4F6F7"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1B2130"
+borderColor = "#DDE2E8"
+dataframeBorderColor = "#DDE2E8"
+dataframeHeaderBackgroundColor = "#ECEFF2"
+linkColor = "#5B2A6E"
+redColor = "#B3261E"
+orangeColor = "#8F5100"
+blueColor = "#3A6EA5"
+greenColor = "#1F7268"
+violetColor = "#5B2A6E"
+grayColor = "#5F6673"
+
+[theme.light.sidebar]
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F6F7"
+borderColor = "#DDE2E8"
+
+[theme.dark]
+primaryColor = "#B48ACB"
+backgroundColor = "#0F121A"
+secondaryBackgroundColor = "#151925"
+textColor = "#E8EAF0"
+borderColor = "#2A3040"
+dataframeBorderColor = "#2A3040"
+dataframeHeaderBackgroundColor = "#1C2130"
+linkColor = "#B48ACB"
+redColor = "#FF8A80"
+orangeColor = "#F0B45A"
+blueColor = "#8AB4E8"
+greenColor = "#4FB3A6"
+violetColor = "#B48ACB"
+grayColor = "#9CA3AF"
+
+[theme.dark.sidebar]
+backgroundColor = "#151925"
+secondaryBackgroundColor = "#0F121A"
+borderColor = "#2A3040"
+
+[client]
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
