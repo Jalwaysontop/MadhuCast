@@ -37,15 +37,16 @@ logger = logging.getLogger(__name__)
 DEFAULT_RAW_DIR = Path("data/raw/cgmacros")
 
 # Sub-folder / file pattern expectations (case-insensitive glob)
+# Multiple patterns per stream — the loader tries all of them.
 FILE_PATTERNS = {
-    "cgm":          "*cgm*.csv",
-    "heart_rate":   "*heart*rate*.csv",
-    "steps":        "*step*.csv",
-    "activity":     "*activit*.csv",
-    "sleep":        "*sleep*.csv",
-    "meals":        "*meal*.csv",
-    "demographics": "*demo*.csv",
-    "labs":         "*lab*.csv",
+    "cgm":          ["*cgm*.csv"],
+    "heart_rate":   ["*heart*rate*.csv"],
+    "steps":        ["*step*.csv"],
+    "activity":     ["*activit*.csv"],
+    "sleep":        ["*sleep*.csv"],
+    "meals":        ["*meal*.csv", "*food*log*.csv", "*Food_Log*.csv"],
+    "demographics": ["*demo*.csv"],
+    "labs":         ["*lab*.csv"],
 }
 
 # ── Diabetes status mapping ──────────────────────────────────────────────────
@@ -68,17 +69,42 @@ DIABETES_STATUS_MAP = {
 #  Low-level file finders
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _find_files(raw_dir: Path, pattern: str) -> List[Path]:
-    """Recursively find files matching *pattern* (case-insensitive)."""
-    matches = sorted(raw_dir.rglob(pattern))
+def _find_files(raw_dir: Path, pattern) -> List[Path]:
+    """Recursively find files matching *pattern* (case-insensitive).
+
+    Parameters
+    ----------
+    pattern : str or list[str]
+        A single glob pattern or a list of glob patterns to try.
+    """
+    if isinstance(pattern, str):
+        patterns = [pattern]
+    else:
+        patterns = list(pattern)
+
+    matches: List[Path] = []
+    for pat in patterns:
+        matches.extend(sorted(raw_dir.rglob(pat)))
+
     if not matches:
-        # Try case-insensitive by lower-casing the stem
+        # Fallback: case-insensitive token matching
+        all_tokens = []
+        for pat in patterns:
+            all_tokens.extend(pat.replace("*", "").replace(".", "").split())
         matches = [
             p for p in raw_dir.rglob("*")
             if p.is_file() and p.suffix.lower() == ".csv"
-            and any(tok in p.stem.lower() for tok in pattern.replace("*", "").split())
+            and any(tok in p.stem.lower() for tok in all_tokens if tok)
         ]
-    return matches
+
+    # Deduplicate while preserving order
+    seen = set()
+    unique: List[Path] = []
+    for p in matches:
+        if p not in seen:
+            seen.add(p)
+            unique.append(p)
+    return sorted(unique)
 
 
 def _read_csv_safe(path: Path, **kwargs) -> pd.DataFrame:
@@ -313,9 +339,50 @@ def load_sleep(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
     return result
 
 
+def _extract_participant_id_from_filename(filepath: Path) -> Optional[str]:
+    """Extract participant ID from CGMacros Food_Log filenames.
+
+    Examples
+    --------
+    Food_Log_001.csv  → '001'
+    Food_Log_010.csv  → '010'
+    """
+    import re
+    stem = filepath.stem  # e.g. 'Food_Log_001'
+    match = re.search(r'(\d{2,4})$', stem)
+    if match:
+        return match.group(1)
+    return None
+
+
+def _infer_meal_type_from_time(hour: float) -> str:
+    """Infer meal type from hour of day.
+
+    CGMacros Food_Log files don't have a meal_type column, so we
+    classify by time of day using standard conventions.
+    """
+    if 5 <= hour < 11:
+        return "breakfast"
+    elif 11 <= hour < 15:
+        return "lunch"
+    elif 15 <= hour < 17.5:
+        return "snack"
+    elif 17.5 <= hour < 22:
+        return "dinner"
+    else:
+        return "snack"  # Late-night eating classified as snack
+
+
 def load_meals(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
     """
     Load self-reported meal logs with macronutrient data.
+
+    Handles two formats:
+    1. **Standard** — CSV with participant_id, timestamp, carbs columns
+    2. **CGMacros Food_Log** — per-participant files (Food_Log_001.csv)
+       where the participant ID is encoded in the filename and columns
+       are: date, time, time_begin, logged_food, calorie, total_carb,
+       dietary_fiber, sugar, protein, total_fat.
 
     Returns
     -------
@@ -323,6 +390,7 @@ def load_meals(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
         participant_id : str
         timestamp      : datetime64[ns]
         meal_type      : str          (breakfast / lunch / dinner / snack)
+        food_name      : str          (logged food name, if available)
         calories_kcal  : float
         carbs_g        : float
         protein_g      : float
@@ -333,7 +401,7 @@ def load_meals(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
     if not files:
         logger.warning("No meal files found in %s", raw_dir)
         return pd.DataFrame(columns=[
-            "participant_id", "timestamp", "meal_type",
+            "participant_id", "timestamp", "meal_type", "food_name",
             "calories_kcal", "carbs_g", "protein_g", "fat_g", "fibre_g"
         ])
 
@@ -342,13 +410,25 @@ def load_meals(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
         df = _read_csv_safe(f)
         df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
 
+        # ── Detect if this is a CGMacros Food_Log file ────────────────────
+        is_food_log = (
+            "logged_food" in df.columns or "searched_food" in df.columns
+        )
+
+        if is_food_log:
+            chunk = _parse_food_log(df, f)
+            if chunk is not None and not chunk.empty:
+                frames.append(chunk)
+            continue
+
+        # ── Standard format (has participant_id column) ───────────────────
         id_col   = _find_column(df, ["participant", "subject", "id", "pid"])
         ts_col   = _find_column(df, ["timestamp", "time", "datetime", "date"])
         type_col = _find_column(df, ["meal_type", "type", "meal", "category"])
         cal_col  = _find_column(df, ["calorie", "calories", "kcal", "energy"])
-        carb_col = _find_column(df, ["carb", "carbs", "carbohydrate"])
+        carb_col = _find_column(df, ["carb", "carbs", "carbohydrate", "total_carb"])
         prot_col = _find_column(df, ["protein", "prot"])
-        fat_col  = _find_column(df, ["fat", "lipid"])
+        fat_col  = _find_column(df, ["fat", "lipid", "total_fat"])
         fib_col  = _find_column(df, ["fibre", "fiber", "dietary_fiber"])
 
         if id_col and ts_col and carb_col:
@@ -374,7 +454,7 @@ def load_meals(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
 
     if not frames:
         return pd.DataFrame(columns=[
-            "participant_id", "timestamp", "meal_type",
+            "participant_id", "timestamp", "meal_type", "food_name",
             "calories_kcal", "carbs_g", "protein_g", "fat_g", "fibre_g"
         ])
 
@@ -390,6 +470,10 @@ def load_meals(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
         result["meal_type"] = "unknown"
     result["meal_type"] = result["meal_type"].fillna("unknown").str.strip().str.lower()
 
+    if "food_name" not in result.columns:
+        result["food_name"] = ""
+    result["food_name"] = result["food_name"].fillna("").astype(str)
+
     result.dropna(subset=["timestamp", "carbs_g"], inplace=True)
     result.sort_values(["participant_id", "timestamp"], inplace=True)
     result.reset_index(drop=True, inplace=True)
@@ -397,6 +481,71 @@ def load_meals(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
     logger.info("Loaded meals: %d rows, %d participants",
                 len(result), result["participant_id"].nunique())
     return result
+
+
+def _parse_food_log(df: pd.DataFrame, filepath: Path) -> Optional[pd.DataFrame]:
+    """Parse a CGMacros Food_Log_XXX.csv into our standard meal format.
+
+    CGMacros Food_Log columns:
+        date, time, time_begin, time_end, logged_food, amount, unit,
+        searched_food, calorie, total_carb, dietary_fiber, sugar,
+        protein, total_fat
+
+    Participant ID comes from the filename (Food_Log_001 → '001').
+    Meal type is inferred from time of day.
+    """
+    pid = _extract_participant_id_from_filename(filepath)
+    if pid is None:
+        logger.warning("Cannot extract participant ID from %s — skipping", filepath)
+        return None
+
+    # ── Build timestamp from 'time_begin' or 'date' + 'time' ─────────────
+    if "time_begin" in df.columns:
+        ts = pd.to_datetime(df["time_begin"], errors="coerce")
+    elif "date" in df.columns and "time" in df.columns:
+        ts = pd.to_datetime(
+            df["date"].astype(str) + " " + df["time"].astype(str),
+            errors="coerce",
+        )
+    elif "date" in df.columns:
+        ts = pd.to_datetime(df["date"], errors="coerce")
+    else:
+        logger.warning("No timestamp column in %s — skipping", filepath)
+        return None
+
+    # ── Extract food name ─────────────────────────────────────────────────
+    food_name = df.get("logged_food", df.get("searched_food", pd.Series(dtype=str)))
+
+    # ── Extract macros ────────────────────────────────────────────────────
+    calorie = pd.to_numeric(df.get("calorie", np.nan), errors="coerce")
+    carbs   = pd.to_numeric(df.get("total_carb", np.nan), errors="coerce")
+    protein = pd.to_numeric(df.get("protein", np.nan), errors="coerce")
+    fat     = pd.to_numeric(df.get("total_fat", np.nan), errors="coerce")
+    fibre   = pd.to_numeric(df.get("dietary_fiber", np.nan), errors="coerce")
+
+    # ── Infer meal type from hour ─────────────────────────────────────────
+    hours = ts.dt.hour + ts.dt.minute / 60.0
+    meal_type = hours.apply(
+        lambda h: _infer_meal_type_from_time(h) if pd.notna(h) else "unknown"
+    )
+
+    chunk = pd.DataFrame({
+        "participant_id": pid,
+        "timestamp":      ts,
+        "meal_type":      meal_type,
+        "food_name":      food_name,
+        "calories_kcal":  calorie,
+        "carbs_g":        carbs,
+        "protein_g":      protein,
+        "fat_g":          fat,
+        "fibre_g":        fibre,
+    })
+
+    # Drop rows with no usable data
+    chunk.dropna(subset=["timestamp"], inplace=True)
+
+    logger.info("  Parsed Food_Log for participant %s: %d meal entries", pid, len(chunk))
+    return chunk
 
 
 def load_demographics(raw_dir: Path = DEFAULT_RAW_DIR) -> pd.DataFrame:
@@ -594,13 +743,22 @@ def load_all(
 
 
 def get_participant_ids(data: Dict[str, pd.DataFrame]) -> List[str]:
-    """Return sorted list of participant IDs present in *all* key streams."""
-    sets = []
-    for key in ("cgm", "meals", "demographics"):
+    """Return sorted list of participant IDs present in all *required* streams.
+
+    CGM is mandatory — we cannot build glucose forecast windows without it.
+    If CGM is absent the function returns an empty list so the caller knows
+    to fall back to demo data.
+    """
+    # CGM is non-negotiable
+    if "cgm" not in data or data["cgm"].empty:
+        logger.warning("CGM stream is empty — cannot identify complete participants.")
+        return []
+
+    sets = [set(data["cgm"]["participant_id"].unique())]
+    for key in ("demographics",):
         if key in data and not data[key].empty:
             sets.append(set(data[key]["participant_id"].unique()))
-    if not sets:
-        return []
+
     common = sorted(sets[0].intersection(*sets[1:]))
     logger.info("Participants with complete data: %d", len(common))
     return common
