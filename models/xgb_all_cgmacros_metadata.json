@@ -1,0 +1,29 @@
+{
+  "dataset": "CGMacros",
+  "target": "y_future_max >= threshold",
+  "threshold": 180.0,
+  "n_samples": 27833,
+  "n_features": 514,
+  "spike_prevalence": 0.07081521934394423,
+  "sequence_columns": [
+    "glucose",
+    "hr",
+    "mets",
+    "carbs",
+    "protein",
+    "fat",
+    "fiber"
+  ],
+  "static_columns": [
+    "sex_male",
+    "age",
+    "bmi",
+    "hba1c",
+    "fasting_glu",
+    "fasting_insulin",
+    "tg",
+    "chol",
+    "hdl",
+    "ldl"
+  ]
+}

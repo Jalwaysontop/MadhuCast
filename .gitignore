@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Testing and linting
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Local datasets and sensitive data
+data/raw/
+data/interim/
+data/processed/
+*.csv
+*.parquet
+*.feather
+
+# Local experiment outputs and caches
+.cache/
+wandb/
+mlruns/
+lightning_logs/
+outputs/
+checkpoints/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Generated reports and figures
+# Uncomment only if these are generated locally and should not be shared
+# reports/figures/
+# docs/figures/
+
+# Model artifacts
+# Keep the model needed by Person 1's integration.
+# Do not ignore all *.json files: your XGBoost JSON model is required.
+# models/*.joblib
+# models/*.json
+
+# Build archives
+*.zip

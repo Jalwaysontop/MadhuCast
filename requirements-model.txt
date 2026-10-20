@@ -1,0 +1,6 @@
+# Version used to validate the supplied native JSON artifact.
+xgboost==3.1.3
+numpy>=1.24
+pandas>=2.0
+pytest>=8.0
+# Use alongside the main MadhuTwin requirements.txt, not as a replacement.
