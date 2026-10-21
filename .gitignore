@@ -71,3 +71,13 @@ checkpoints/
 
 # Build archives
 *.zip
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.DS_Store
+logs/*
+!logs/.gitkeep
+data/raw/
+.hypothesis/
+.ruff_cache/
