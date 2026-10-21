@@ -1,0 +1,172 @@
+food_id,food_name,category,portion_unit,portion_description,portion_grams,calories_kcal,carbs_g,protein_g,fat_g,fibre_g,glycemic_index,glycemic_load,is_vegetarian,preparation_modifier
+R001,White Rice (Steamed),rice,katori,1 katori cooked,150,195,44.2,3.6,0.5,0.4,73,32,True,steamed
+R002,Brown Rice (Steamed),rice,katori,1 katori cooked,150,171,35.7,3.8,1.4,2.7,68,24,True,steamed
+R003,Jeera Rice,rice,katori,1 katori,150,210,42.0,3.9,2.8,0.6,65,27,True,tempered
+R004,Lemon Rice,rice,katori,1 katori,150,225,43.5,3.5,3.8,0.8,64,28,True,tempered
+R005,Curd Rice,rice,katori,1 katori,150,180,33.5,5.2,3.0,0.3,58,19,True,mixed
+R006,Vegetable Pulao,rice,katori,1 katori,150,200,38.0,4.0,3.5,1.5,58,22,True,cooked
+R007,Biryani Rice (Veg),rice,katori,1 katori,150,230,40.0,4.5,5.5,1.0,60,24,True,layered
+R008,Chicken Biryani Rice,rice,katori,1 katori,180,310,42.0,14.5,9.0,0.8,60,25,False,layered
+R009,Mutton Biryani Rice,rice,katori,1 katori,180,340,40.0,16.0,12.0,0.7,58,23,False,layered
+R010,Pongal,rice,katori,1 katori,150,205,32.0,5.5,6.0,1.2,55,18,True,boiled
+R011,Khichdi,rice,katori,1 katori,150,175,30.0,6.0,3.0,1.8,52,16,True,boiled
+R012,Tamarind Rice (Puliyogare),rice,katori,1 katori,150,215,42.0,3.5,3.5,1.0,62,26,True,tempered
+R013,Coconut Rice,rice,katori,1 katori,150,235,40.0,3.8,6.5,1.5,60,24,True,tempered
+R014,Parboiled Rice (Ukda Chawal),rice,katori,1 katori cooked,150,185,41.0,3.8,0.6,0.8,55,23,True,steamed
+R015,Basmati Rice (White),rice,katori,1 katori cooked,150,190,43.0,3.7,0.4,0.5,58,25,True,steamed
+B001,Wheat Roti (Chapati),bread,piece,1 medium roti,35,100,18.5,3.2,2.0,1.8,62,11,True,dry_roasted
+B002,Phulka,bread,piece,1 phulka,25,72,13.2,2.3,1.4,1.3,62,8,True,puffed
+B003,Paratha (Plain),bread,piece,1 medium paratha,60,180,24.0,4.0,7.5,1.5,62,15,True,shallow_fried
+B004,Aloo Paratha,bread,piece,1 stuffed paratha,80,240,30.0,4.5,11.0,2.0,60,18,True,shallow_fried
+B005,Gobi Paratha,bread,piece,1 stuffed paratha,80,210,28.0,4.8,8.5,2.5,58,16,True,shallow_fried
+B006,Paneer Paratha,bread,piece,1 stuffed paratha,80,250,26.0,8.0,12.0,1.5,56,15,True,shallow_fried
+B007,Methi Paratha,bread,piece,1 paratha,70,195,25.0,4.5,8.0,2.8,55,14,True,shallow_fried
+B008,Naan (Plain),bread,piece,1 naan,80,260,43.0,7.5,5.0,1.8,71,31,True,tandoor
+B009,Butter Naan,bread,piece,1 naan,90,310,43.5,7.0,11.5,1.5,71,31,True,tandoor
+B010,Garlic Naan,bread,piece,1 naan,85,280,42.0,7.5,8.0,1.8,70,29,True,tandoor
+B011,Kulcha,bread,piece,1 kulcha,75,240,38.0,6.5,6.5,1.5,68,26,True,tandoor
+B012,Puri,bread,piece,1 puri,25,115,13.0,2.0,6.0,0.5,70,9,True,deep_fried
+B013,Bhatura,bread,piece,1 bhatura,60,280,35.0,5.5,13.0,1.0,72,25,True,deep_fried
+B014,Rumali Roti,bread,piece,1 roti,30,85,16.0,2.8,1.0,0.8,60,10,True,griddle
+B015,Bajra Roti,bread,piece,1 roti,40,120,22.0,3.5,2.0,3.0,55,12,True,dry_roasted
+B016,Jowar Roti,bread,piece,1 roti,40,118,24.0,3.8,1.5,3.2,62,15,True,dry_roasted
+B017,Makki Ki Roti,bread,piece,1 roti,50,140,28.0,3.0,2.0,2.5,65,18,True,dry_roasted
+B018,Ragi Roti (Millet),bread,piece,1 roti,45,125,25.0,3.5,1.5,4.0,54,14,True,dry_roasted
+B019,Thepla,bread,piece,1 thepla,40,130,18.0,3.5,5.0,1.5,55,10,True,shallow_fried
+B020,Dosa (Plain),bread,piece,1 dosa,50,120,18.0,3.0,4.0,0.5,77,14,True,griddle
+B021,Masala Dosa,bread,piece,1 dosa with filling,120,210,28.0,4.5,9.0,1.8,70,20,True,griddle
+B022,Rava Dosa,bread,piece,1 dosa,70,150,22.0,3.0,5.5,0.8,68,15,True,griddle
+B023,Uttapam,bread,piece,1 uttapam,100,170,25.0,4.5,5.0,1.5,62,16,True,griddle
+B024,Appam,bread,piece,1 appam,60,105,20.0,2.0,1.5,0.5,65,13,True,steamed
+D001,Toor Dal (Arhar),dal,katori,1 katori cooked,150,165,22.5,10.5,3.5,4.0,29,7,True,boiled
+D002,Moong Dal (Yellow),dal,katori,1 katori cooked,150,145,19.0,10.0,2.5,3.5,31,6,True,boiled
+D003,Masoor Dal (Red Lentil),dal,katori,1 katori cooked,150,155,21.0,10.5,2.0,3.8,26,5,True,boiled
+D004,Chana Dal,dal,katori,1 katori cooked,150,175,24.0,11.0,3.0,5.0,8,2,True,boiled
+D005,Urad Dal (Black Gram),dal,katori,1 katori cooked,150,160,20.0,11.5,3.0,4.5,43,9,True,boiled
+D006,Rajma (Kidney Beans),dal,katori,1 katori cooked,150,180,25.0,10.0,2.5,6.5,29,7,True,boiled
+D007,Chole (Chickpea Curry),dal,katori,1 katori,150,200,26.0,9.0,6.5,5.5,33,9,True,cooked
+D008,Dal Tadka,dal,katori,1 katori,150,175,20.0,9.5,5.5,3.5,30,6,True,tempered
+D009,Dal Makhani,dal,katori,1 katori,150,225,22.0,9.0,11.0,4.0,32,7,True,slow_cooked
+D010,Sambar,dal,katori,1 katori,150,130,16.0,6.5,4.0,3.0,35,6,True,boiled
+D011,Rasam,dal,katori,1 katori,150,55,8.0,2.0,1.5,1.0,32,3,True,boiled
+D012,Moong Sprouts Curry,dal,katori,1 katori,120,115,14.0,8.0,2.5,3.5,25,4,True,cooked
+D013,Kadhi (Besan Yoghurt),dal,katori,1 katori,150,140,12.0,5.0,8.0,1.0,32,4,True,cooked
+D014,Panchmel Dal,dal,katori,1 katori,150,170,22.0,10.0,4.0,4.5,30,7,True,boiled
+D015,Lobia Curry (Black-Eyed Peas),dal,katori,1 katori,150,175,24.0,9.5,3.0,5.0,33,8,True,cooked
+V001,Aloo Gobi,vegetable,katori,1 katori,150,160,18.0,3.5,8.0,3.0,50,9,True,cooked
+V002,Bhindi Masala (Okra),vegetable,katori,1 katori,120,110,8.0,2.5,7.5,3.5,20,2,True,cooked
+V003,Baingan Bharta (Eggplant),vegetable,katori,1 katori,150,125,10.0,3.0,8.0,4.0,15,2,True,roasted
+V004,Palak Paneer,vegetable,katori,1 katori,150,200,7.0,10.0,14.5,2.5,15,1,True,cooked
+V005,Matar Paneer,vegetable,katori,1 katori,150,225,12.0,10.5,15.0,3.0,35,4,True,cooked
+V006,Aloo Matar,vegetable,katori,1 katori,150,170,20.0,4.5,7.5,3.5,45,9,True,cooked
+V007,Mixed Veg Curry,vegetable,katori,1 katori,150,140,14.0,4.0,7.0,4.0,35,5,True,cooked
+V008,Lauki (Bottle Gourd) Curry,vegetable,katori,1 katori,150,85,8.5,2.0,4.5,1.5,15,1,True,cooked
+V009,Tinda Masala,vegetable,katori,1 katori,150,90,9.0,2.5,4.5,2.0,15,1,True,cooked
+V010,Karela Fry (Bitter Gourd),vegetable,katori,1 katori,100,95,7.0,2.0,6.5,3.0,15,1,True,fried
+V011,Cabbage Sabzi,vegetable,katori,1 katori,120,75,7.5,2.0,3.5,2.5,15,1,True,stir_fried
+V012,Beans Poriyal,vegetable,katori,1 katori,120,85,8.0,3.0,4.0,3.5,15,1,True,stir_fried
+V013,Methi Sabzi (Fenugreek),vegetable,katori,1 katori,100,80,6.0,3.0,4.5,3.0,15,1,True,cooked
+V014,Sarson Ka Saag,vegetable,katori,1 katori,150,120,8.0,4.0,7.5,3.5,15,1,True,slow_cooked
+V015,Sem Ki Phali (Flat Beans),vegetable,katori,1 katori,120,90,10.0,3.5,3.5,3.0,20,2,True,cooked
+V016,Drumstick Curry (Moringa),vegetable,katori,1 katori,150,100,10.0,3.5,4.5,3.0,20,2,True,cooked
+V017,Kootu (Mixed Veg + Lentil),vegetable,katori,1 katori,150,135,15.0,6.0,4.5,4.0,30,5,True,boiled
+V018,Aviyal,vegetable,katori,1 katori,150,145,12.0,3.5,9.0,4.0,25,3,True,cooked
+V019,Undhiyu,vegetable,katori,1 katori,150,180,18.0,5.0,9.5,5.0,35,6,True,slow_cooked
+V020,Shalgam Ki Sabzi (Turnip),vegetable,katori,1 katori,120,80,9.0,2.0,3.5,2.5,30,3,True,cooked
+NV001,Chicken Curry,non_veg,katori,1 katori,150,250,6.0,22.0,15.0,1.0,0,0,False,cooked
+NV002,Butter Chicken,non_veg,katori,1 katori,150,310,8.0,20.0,22.0,1.0,0,0,False,cooked
+NV003,Chicken Tikka (boneless),non_veg,piece,3 pieces,100,175,4.0,25.0,7.0,0.5,0,0,False,tandoor
+NV004,Tandoori Chicken,non_veg,piece,1 leg piece,120,195,3.0,24.0,9.5,0.3,0,0,False,tandoor
+NV005,Egg Curry (2 eggs),non_veg,katori,1 katori,180,220,6.0,14.0,15.5,0.8,0,0,False,cooked
+NV006,Egg Bhurji (Scramble),non_veg,katori,1 katori,120,185,3.0,12.0,14.0,0.5,0,0,False,cooked
+NV007,Fish Curry,non_veg,katori,1 katori,150,195,5.0,20.0,10.5,0.8,0,0,False,cooked
+NV008,Fish Fry,non_veg,piece,1 medium piece,80,170,5.0,16.0,9.5,0.3,0,0,False,fried
+NV009,Mutton Curry,non_veg,katori,1 katori,150,290,5.0,20.0,21.0,0.8,0,0,False,cooked
+NV010,Keema Matar,non_veg,katori,1 katori,150,270,10.0,18.0,18.0,2.0,0,0,False,cooked
+NV011,Prawn Masala,non_veg,katori,1 katori,150,200,6.0,22.0,10.0,1.0,0,0,False,cooked
+NV012,Chicken Chettinad,non_veg,katori,1 katori,150,260,7.0,21.0,16.0,1.5,0,0,False,cooked
+NV013,Rogan Josh,non_veg,katori,1 katori,150,280,6.0,19.0,20.0,1.0,0,0,False,slow_cooked
+NV014,Kadai Chicken,non_veg,katori,1 katori,150,245,7.0,21.0,15.0,1.5,0,0,False,cooked
+NV015,Goan Fish Curry,non_veg,katori,1 katori,150,190,6.0,19.0,10.0,1.0,0,0,False,cooked
+SN001,Samosa (Potato),snack,piece,1 samosa,60,180,20.0,3.0,10.0,1.5,66,13,True,deep_fried
+SN002,Pakora (Mixed Veg),snack,serving,5 pakoras,80,210,18.0,4.5,13.5,1.5,55,10,True,deep_fried
+SN003,Vada (Medu),snack,piece,1 vada,40,140,12.0,5.0,8.5,1.5,60,7,True,deep_fried
+SN004,Bhel Puri,snack,serving,1 plate,100,160,26.0,4.0,4.5,2.0,62,16,True,mixed
+SN005,Pani Puri (6 pcs),snack,serving,6 puris,90,175,28.0,3.5,5.5,1.5,65,18,True,mixed
+SN006,Sev Puri,snack,serving,4 puris,80,180,22.0,3.0,8.5,1.0,60,13,True,assembled
+SN007,Aloo Tikki,snack,piece,1 tikki,60,130,16.0,2.5,6.5,1.5,60,10,True,shallow_fried
+SN008,Dahi Vada,snack,piece,2 vadas,120,190,20.0,6.5,9.0,1.0,50,10,True,fried_soaked
+SN009,Kachori,snack,piece,1 kachori,50,200,20.0,4.0,12.0,1.5,65,13,True,deep_fried
+SN010,Dhokla,snack,piece,3 pieces,90,130,20.0,5.5,3.0,1.5,45,9,True,steamed
+SN011,Khandvi,snack,serving,4 rolls,80,110,14.0,5.0,3.5,1.0,40,6,True,cooked
+SN012,Murukku (Chakli),snack,serving,3 pieces,30,145,16.0,2.5,8.0,1.0,65,10,True,deep_fried
+SN013,Bonda (Potato),snack,piece,1 bonda,50,155,17.0,3.0,8.5,1.0,58,10,True,deep_fried
+SN014,Cutlet (Veg),snack,piece,1 cutlet,60,150,15.0,3.5,8.5,2.0,50,8,True,shallow_fried
+SN015,Bread Pakora,snack,piece,1 piece,60,175,20.0,4.0,9.0,1.0,68,14,True,deep_fried
+SW001,Gulab Jamun,sweet,piece,1 piece,40,145,22.0,2.0,5.5,0.2,75,17,True,deep_fried
+SW002,Rasgulla,sweet,piece,1 piece,40,125,22.0,2.5,2.5,0.0,70,15,True,boiled
+SW003,Jalebi,sweet,piece,1 piece,30,140,24.0,1.5,4.5,0.1,80,19,True,deep_fried
+SW004,Laddu (Besan),sweet,piece,1 laddu,30,145,16.0,3.0,8.0,0.8,55,9,True,cooked
+SW005,Kheer (Rice),sweet,katori,1 katori,120,200,30.0,5.0,6.5,0.3,65,20,True,boiled
+SW006,Halwa (Suji),sweet,katori,1 katori,100,250,30.0,3.5,13.0,0.5,65,20,True,cooked
+SW007,Barfi (Kaju),sweet,piece,1 piece,25,120,14.0,2.5,6.5,0.3,55,8,True,cooked
+SW008,Payasam (Vermicelli),sweet,katori,1 katori,120,215,32.0,5.0,7.5,0.5,65,21,True,boiled
+SW009,Gajar Ka Halwa,sweet,katori,1 katori,100,220,25.0,4.0,12.0,2.0,55,14,True,cooked
+SW010,Rasmalai,sweet,piece,1 piece,50,155,18.0,4.0,7.5,0.1,60,11,True,soaked
+SW011,Mysore Pak,sweet,piece,1 piece,25,140,12.0,2.0,9.5,0.5,60,7,True,cooked
+SW012,Sandesh,sweet,piece,1 piece,30,95,12.0,3.0,4.0,0.1,50,6,True,cooked
+BF001,Poha (Flattened Rice),breakfast,katori,1 katori,150,180,30.0,3.5,5.0,1.5,64,19,True,tempered
+BF002,Upma (Rava),breakfast,katori,1 katori,150,195,28.0,4.5,6.5,1.5,65,18,True,cooked
+BF003,Idli,breakfast,piece,2 idlis,80,110,20.0,3.5,1.0,1.0,70,14,True,steamed
+BF004,Idli Sambar (2 idlis + sambar),breakfast,serving,1 serving,200,180,28.0,7.0,3.5,2.5,58,16,True,steamed
+BF005,Pesarattu,breakfast,piece,1 pesarattu,70,120,14.0,6.5,4.0,2.5,38,5,True,griddle
+BF006,Aloo Puri (2 puris + sabzi),breakfast,serving,1 serving,150,300,32.0,5.5,16.0,2.0,65,21,True,deep_fried
+BF007,Chole Bhature (1 bhatura + chole),breakfast,serving,1 serving,200,420,48.0,12.0,20.0,4.5,68,33,True,deep_fried
+BF008,Paratha + Curd,breakfast,serving,1 paratha + curd,120,230,26.0,6.5,11.0,1.8,55,14,True,shallow_fried
+BF009,Misal Pav,breakfast,serving,1 plate,200,350,42.0,12.0,14.0,5.0,58,24,True,cooked
+BF010,Sabudana Khichdi,breakfast,katori,1 katori,150,230,40.0,3.0,7.0,0.8,67,27,True,cooked
+BF011,Rava Idli,breakfast,piece,2 pieces,80,130,22.0,3.5,3.0,1.0,62,14,True,steamed
+BF012,Puttu + Kadala Curry,breakfast,serving,1 serving,200,280,40.0,9.0,9.0,4.5,55,22,True,steamed
+BF013,Medu Vada + Sambar,breakfast,serving,2 vada + sambar,160,285,28.0,10.0,14.5,3.0,55,15,True,deep_fried
+BF014,Cornflakes + Milk,breakfast,katori,1 katori,40,185,30.0,5.5,4.5,0.8,81,24,True,cold
+BF015,Oats Porridge,breakfast,katori,1 katori cooked,150,130,22.0,5.0,2.5,3.0,55,12,True,boiled
+BV001,Chai (with sugar),beverage,cup,1 cup,150,80,12.5,2.5,2.0,0.0,65,8,True,boiled
+BV002,Chai (without sugar),beverage,cup,1 cup,150,35,3.0,2.5,1.5,0.0,0,0,True,boiled
+BV003,Filter Coffee (with sugar),beverage,cup,1 cup,150,85,12.0,2.0,3.0,0.0,65,8,True,brewed
+BV004,Lassi (Sweet),beverage,glass,1 glass,200,165,25.0,5.0,5.0,0.0,60,15,True,blended
+BV005,Lassi (Salt/Plain),beverage,glass,1 glass,200,95,6.0,5.0,5.0,0.0,36,2,True,blended
+BV006,Buttermilk (Chaas),beverage,glass,1 glass,200,45,4.0,2.5,1.5,0.0,35,1,True,churned
+BV007,Nimbu Pani (with sugar),beverage,glass,1 glass,250,85,20.0,0.3,0.0,0.1,65,13,True,mixed
+BV008,Jaljeera,beverage,glass,1 glass,250,35,7.0,0.5,0.3,0.5,50,4,True,mixed
+BV009,Aam Panna,beverage,glass,1 glass,250,95,22.0,0.5,0.3,0.5,55,12,True,cooked
+BV010,Coconut Water,beverage,glass,1 glass,200,45,9.0,1.5,0.3,1.0,55,5,True,raw
+BV011,Badam Milk,beverage,glass,1 glass,200,180,20.0,7.0,8.0,1.0,45,9,True,blended
+BV012,Sugarcane Juice,beverage,glass,1 glass,250,180,42.0,0.5,0.3,0.0,70,29,True,pressed
+FR001,Banana,fruit,piece,1 medium,120,105,27.0,1.3,0.4,3.1,51,13,True,raw
+FR002,Mango (Alphonso),fruit,katori,1 katori sliced,150,100,25.0,1.0,0.5,2.5,56,14,True,raw
+FR003,Papaya,fruit,katori,1 katori diced,150,60,15.0,0.9,0.2,2.5,60,9,True,raw
+FR004,Guava,fruit,piece,1 medium,100,68,14.0,2.5,1.0,5.5,12,2,True,raw
+FR005,Apple,fruit,piece,1 medium,150,78,21.0,0.4,0.2,3.5,36,8,True,raw
+FR006,Chikoo (Sapodilla),fruit,piece,1 medium,100,83,20.0,0.4,1.1,5.3,55,11,True,raw
+FR007,Pomegranate,fruit,katori,1 katori seeds,100,83,19.0,1.7,1.2,4.0,35,7,True,raw
+FR008,Watermelon,fruit,katori,1 katori diced,150,45,11.5,0.9,0.2,0.6,76,9,True,raw
+FR009,Grapes (Indian),fruit,katori,1 katori,100,69,18.0,0.7,0.2,0.9,59,11,True,raw
+FR010,Orange (Nagpur),fruit,piece,1 medium,130,62,15.4,1.3,0.2,3.1,40,6,True,raw
+FR011,Jackfruit (Ripe),fruit,katori,1 katori,100,95,23.0,1.7,0.6,1.5,50,12,True,raw
+FR012,Custard Apple (Sitaphal),fruit,piece,1 medium,100,94,24.0,1.6,0.3,3.0,54,13,True,raw
+DA001,Paneer (Cottage Cheese),dairy,katori,1 katori cubed,75,195,2.0,14.0,14.5,0.0,0,0,True,raw
+DA002,Curd / Dahi (Plain),dairy,katori,1 katori,100,60,5.0,3.5,3.0,0.0,36,2,True,set
+DA003,Raita (Boondi),dairy,katori,1 katori,100,90,10.0,3.0,4.0,0.3,40,4,True,mixed
+DA004,Raita (Cucumber),dairy,katori,1 katori,100,55,5.0,3.0,2.5,0.3,30,2,True,mixed
+DA005,Shrikhand,dairy,katori,1 katori,80,190,28.0,4.5,7.0,0.1,60,17,True,mixed
+DA006,Mishti Doi (Sweet Yoghurt),dairy,katori,1 katori,100,140,22.0,4.0,4.0,0.0,58,13,True,set
+AC001,Mango Pickle (Aam Ka Achaar),accompaniment,tablespoon,1 tbsp,15,30,2.0,0.3,2.5,0.3,0,0,True,fermented
+AC002,Lime Pickle,accompaniment,tablespoon,1 tbsp,15,25,2.0,0.2,2.0,0.3,0,0,True,fermented
+AC003,Coconut Chutney,accompaniment,tablespoon,2 tbsp,30,50,3.5,1.0,3.5,1.0,0,0,True,ground
+AC004,Mint Chutney (Pudina),accompaniment,tablespoon,2 tbsp,30,15,2.0,0.5,0.5,0.5,0,0,True,ground
+AC005,Tamarind Chutney,accompaniment,tablespoon,2 tbsp,30,50,12.0,0.3,0.2,0.5,55,7,True,cooked
+AC006,Tomato Chutney,accompaniment,tablespoon,2 tbsp,30,35,4.0,0.5,1.5,0.5,30,1,True,cooked
+AC007,Onion Raita,accompaniment,katori,1 katori,80,50,4.5,2.5,2.0,0.3,30,1,True,mixed
+AC008,Papad (Roasted),accompaniment,piece,1 papad,15,55,8.0,3.0,1.0,0.5,60,5,True,roasted
+AC009,Papad (Fried),accompaniment,piece,1 papad,15,75,7.5,2.5,4.0,0.5,60,5,True,deep_fried
+AC010,Ghee,accompaniment,teaspoon,1 tsp,5,45,0.0,0.0,5.0,0.0,0,0,True,clarified
