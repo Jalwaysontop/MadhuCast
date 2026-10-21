@@ -101,3 +101,26 @@ def test_patient_switch_and_unknown_state(app):
     assert not app.exception
     assert readout(app, "Current glucose") == "UNKNOWN"
     assert 'data-tier="UNKNOWN"' in _texts(app)  # stale stream is loud, never "low risk"
+
+
+@pytest.mark.parametrize("data", ["mock", "real"])
+def test_pages_render_on_real_model(data, monkeypatch, tmp_path, request):
+    """P2's hybrid XGBoost adapter (and P3's exported data): every page renders, and the hybrid is disclosed."""
+    if data == "real":
+        request.getfixturevalue("real_data")
+    monkeypatch.setenv("MADHUTWIN_MODEL", "real")
+    monkeypatch.setenv("MADHUTWIN_LOG_DIR", str(tmp_path))
+    at = AppTest.from_file(APP, default_timeout=300)
+    at.run()
+    assert not at.exception and not at.error, (at.exception, [e.value for e in at.error])
+    side = " ".join(str(m.value) for m in at.sidebar.markdown)
+    assert 'data-prov="MODEL_ESTIMATE"' in side and "spike probability" in side and 'data-prov="MOCK"' in side
+    if data == "real":
+        assert 'data-prov="SYNTHETIC"' in side and 'data-prov="REAL"' not in side
+    for page in PAGES:
+        at.switch_page(page).run()
+        assert not at.exception and not at.error, (page, at.exception, [e.value for e in at.error])
+    at.switch_page("pages/whatif_lab.py").run()
+    at.button(key="preset-+20 min post-meal walk").click().run()
+    assert readout(at, "Δ spike probability") == "n/a"
+    assert any("cannot see a post-meal walk" in str(m.value) for m in at.markdown)

@@ -303,12 +303,39 @@ def sidebar() -> None:
         st.session_state.now = opts[tlabels.index(chosen)]
         if DEMO:
             kit.caption("Demo mode: seed, patient and replay time are pinned so the video is reproducible.")
-        b = backend.describe()
         kit.md(
             f'<div class="mt-caption" style="margin-top:8px">Backend &nbsp;'
-            f'{kit.provenance_badge("MOCK") if b["data"] == "MOCK" else kit.provenance_badge("REAL")} data &nbsp;'
-            f'{kit.provenance_badge("MOCK") if b["model"] == "MOCK" else kit.provenance_badge("MODEL_ESTIMATE")} model</div>'
+            f"{kit.provenance_badge(_data_badge())} data &nbsp;"
+            f"{_model_badges()}</div>"
         )
+
+
+def _data_badge() -> str:
+    try:
+        return backend.data_provenance()
+    except ContractError:
+        return "REAL"
+
+
+def _model_badges() -> str:
+    """One badge per forecast part, so a hybrid model (real spike classifier, mock curve) is never
+    shown as wholly real."""
+    try:
+        parts = backend.model_parts()
+    except ContractError:
+        parts = {"model": "MODEL_ESTIMATE"}
+    if len(parts) == 1:
+        return f"{kit.provenance_badge(next(iter(parts.values())))} model"
+    return " &nbsp;".join(f"{kit.provenance_badge(v)} {kit.esc(k)}" for k, v in parts.items())
+
+
+def spike_source(fc: Forecast) -> str:
+    """Foot note for a spike-probability readout when it and the curve come from different models."""
+    if backend.is_real_spike(fc) and "MOCK" in backend.model_parts().values():
+        return "XGBoost classifier; curve and hypo are MOCK"
+    if "real model skipped" in (fc.model_version or ""):
+        return "MOCK: real model skipped, under 6 h of fresh history"
+    return ""
 
 
 def _patient_label(p: str) -> str:

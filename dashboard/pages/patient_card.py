@@ -40,6 +40,7 @@ LIPIDS = {
     "ldl": ("LDL cholesterol", "< 100", lambda v, s: "above target" if v >= 100 else "at target"),
     "hdl": ("HDL cholesterol", "> 40 (M) / > 50 (F)", lambda v, s: "low" if v < (40 if s == "M" else 50) else "ok"),
     "tg": ("Triglycerides", "< 150", lambda v, s: "high" if v >= 150 else "ok"),
+    "chol": ("Total cholesterol", "< 200", lambda v, s: "high" if v >= 200 else "ok"),
 }
 
 
@@ -122,7 +123,10 @@ def render() -> None:
                 "real person."
             )
         else:
-            kit.empty_state("No pairing metadata.", "Person 3's profile JSON should include a pairing block.")
+            kit.empty_state(
+                "No synthetic EHR pairing.",
+                "The record shown is the wearable participant's own; see the field provenance below.",
+            )
         kit.md(
             '<div style="font-size:14px;font-weight:600;margin:16px 0 6px">Field provenance</div>'
             + " ".join(

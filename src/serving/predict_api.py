@@ -35,6 +35,11 @@ STATIC_COLUMNS = [
 SEQUENCE_STEPS = 72
 STEP_MINUTES = 5
 EXPECTED_FEATURES = SEQUENCE_STEPS * len(SEQUENCE_COLUMNS) + len(STATIC_COLUMNS)  # 514
+# Which Forecast parts this adapter really models (read by backend.model_parts() for the UI badges).
+OUTPUT_PROVENANCE = {"spike probability": "MODEL_ESTIMATE", "curve, bands, hypo": "MOCK"}
+# What-if levers the classifier cannot see: it reads only the past six hours of glucose/HR/METs and
+# logged macros, so a future walk, a later meal or the sleep proxy leave spike_prob unchanged.
+SPIKE_BLIND_LEVERS = ("walk", "later_meal", "sleep")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_PATH = PROJECT_ROOT / "models" / "xgb_all_cgmacros.json"

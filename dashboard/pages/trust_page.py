@@ -37,14 +37,17 @@ def _section(title: str, name: str):
 
 
 @st.cache_data(show_spinner="Running the attribution / what-if agreement check across the cohort…")
-def _cohort_agreement(mode: str, now_iso: str) -> tuple[int, int]:
-    agree = total = 0
+def _cohort_agreement(mode: str, now_iso: str) -> tuple[int, int, int]:
+    """(agreeing checks, checks, forecasts that carried attributions)."""
+    agree = total = attributed = 0
     for p in backend.list_patients():
         state = backend.get_state(p, datetime.fromisoformat(now_iso))
-        res = T.agreement_check(state, backend.predict(state), lambda s, sc: backend.predict(s, sc))
+        fc = backend.predict(state)
+        attributed += bool(fc.shap_values)
+        res = T.agreement_check(state, fc, lambda s, sc: backend.predict(s, sc))
         agree += sum(r.agree for r in res)
         total += len(res)
-    return agree, total
+    return agree, total, attributed
 
 
 def render() -> None:
@@ -180,8 +183,13 @@ def render() -> None:
             )
     with c2:
         kit.md('<h3 style="margin:18px 0 6px;font-size:20px;font-weight:600">Attribution and what-if agreement</h3>')
-        agree, total = _cohort_agreement(common.mode_key(), common.now().isoformat())
-        if total:
+        agree, total, attributed = _cohort_agreement(common.mode_key(), common.now().isoformat())
+        if not attributed:
+            kit.empty_state(
+                "The active model returns no attributions, so this check cannot run.",
+                "P2's XGBoost adapter outputs a spike probability only. Ship SHAP values to enable it.",
+            )
+        elif total:
             kit.readouts(
                 [
                     kit.Readout(

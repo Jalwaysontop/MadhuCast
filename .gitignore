@@ -39,12 +39,11 @@ Thumbs.db
 *.tmp
 *.bak
 
-# Local datasets and sensitive data
+# Local datasets and sensitive data (scoped: reports/*.csv from P2 must stay committable)
 data/raw/
 data/interim/
 data/processed/
-*.csv
-*.parquet
+data/pairing_log.csv
 *.feather
 
 # Local experiment outputs and caches
@@ -71,13 +70,6 @@ checkpoints/
 
 # Build archives
 *.zip
-__pycache__/
-*.pyc
-.pytest_cache/
-.venv/
-.DS_Store
 logs/*
 !logs/.gitkeep
-data/raw/
 .hypothesis/
-.ruff_cache/

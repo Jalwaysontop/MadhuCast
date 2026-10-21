@@ -40,7 +40,15 @@ def render() -> None:
     with left, st.container(key="panel-drivers"):
         st.subheader("Drivers of the predicted 2-hour peak")
         if not fc.shap_values:
-            kit.empty_state("No attributions for this forecast.", T.FALLBACK)
+            kit.empty_state(
+                "No attributions for this forecast.",
+                (
+                    "The real model is an XGBoost spike classifier shipped without SHAP values, so nothing is "
+                    "attributed. " + T.FALLBACK.split(". ", 1)[1]
+                    if backend.model_mode() == "real"
+                    else T.FALLBACK
+                ),
+            )
         else:
             vals = fc.feature_values or {}
             base = fc.feature_baselines or {}
@@ -68,7 +76,9 @@ def render() -> None:
         with st.container(key="panel-agree"):
             st.subheader("Do attributions agree with the what-if engine?")
             res = T.agreement_check(state, fc, lambda s, sc: backend.predict(s, sc))
-            if not res:
+            if not fc.shap_values:
+                kit.empty_state("Nothing to test.", "This forecast has no attributions to check against what-if.")
+            elif not res:
                 kit.empty_state(
                     "Nothing to test for this forecast.",
                     "No attributed what-if lever moves the peak here (for example, no walking to vary).",

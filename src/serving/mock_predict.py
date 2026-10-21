@@ -388,7 +388,8 @@ def mock_thresholds() -> dict:
 @lru_cache(maxsize=1)
 def _mock_whatif_sanity() -> pd.DataFrame:
     """Directional tests computed live on the mock cohort at the demo time."""
-    from src.serving import backend, mock_data
+    from src.serving import mock_data
+    from src.serving import scenario as scenario_mod
 
     tests: dict[str, list[bool]] = {
         "more_carbs_raises_peak": [],
@@ -402,24 +403,20 @@ def _mock_whatif_sanity() -> pd.DataFrame:
             continue
         idx = len(st.meals) - 1
         st = mock_data.get_state(pid, st.meals[idx].t)
-        base = max(p.q50 for p in backend.predict(st, Scenario(), explain=False).trajectory)
 
         def peak(sc: Scenario, st=st) -> float:
-            return max(p.q50 for p in backend.predict(st, sc, explain=False).trajectory)
+            # The mock cohort's own resolver, whatever MADHUTWIN_DATA says: these are mock_data patients.
+            evaluated = scenario_mod.apply(st, sc, mock_data.resolve_meal)
+            return max(p.q50 for p in predict(evaluated, sc, explain=False).trajectory)
+
+        base = peak(Scenario())
 
         tests["more_carbs_raises_peak"].append(peak(Scenario(portion_scale=1.5)) > base)
         tests["walk_lowers_peak"].append(peak(Scenario(walk_minutes=20)) <= base)
         tests["short_sleep_raises_peak"].append(peak(Scenario(prior_sleep_hours=5)) >= base)
         items = st.meals[idx].items or []
-        if any("rice" in i["food"] for i in items):
-            swapped = [
-                (
-                    {"food": "millet roti (bajra)", "portion": 2 * i["portion"], "unit": "piece"}
-                    if "rice" in i["food"]
-                    else i
-                )
-                for i in items
-            ]
+        swapped = scenario_mod.rice_to_millet(items) if items else None
+        if swapped:
             tests["millet_swap_lowers_peak"].append(
                 peak(Scenario(meal_swap={"meal_index": idx, "items": swapped})) < base
             )

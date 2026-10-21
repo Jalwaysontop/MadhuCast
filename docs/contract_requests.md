@@ -129,4 +129,8 @@ Notes on `whatif_sanity.csv`:
 |---|---|---|---|
 | 2026-10-19 | P1 | Contract v0.1.0 circulated | awaiting review |
 | 2026-10-19 | P1 | v0.1.1 (additive): `ActivityBlock`, `PatientState.planned_activity`, planned meals (R2.3) | awaiting review |
-| 2026-10-19 | P1 | `pytest -m contract` against real: **fails** (no `data/processed/patient_profiles/`). Expected until the Day-5 P3 handoff | open |
+| 2026-10-19 | P1 | `pytest -m contract` against real: **fails** (no `data/processed/patient_profiles/`). Expected until the Day-5 P3 handoff | closed 2026-10-21 |
+| 2026-10-21 | P3 | Pipeline merged. No R3.1–R3.3 files, no `resolve_meal()`, food DB columns differ from R3.4. P1 bridged all three without editing P3 files (ADR-016). **Please:** fill `licence` per food row; say whether 3 demo days is the intended cohort or the CGMacros files are coming | bridged |
+| 2026-10-21 | P3 | 19 pyflakes findings in `src/data/`, `src/models/`, `scripts/build_dataset.py` (unused imports/variables; no correctness bugs). Style rules (UP/I/E402) also fail `ruff check .` | open |
+| 2026-10-21 | P2 | XGBoost spike classifier merged: spike probability only, no quantiles, hypo, SHAP or `reports/`. Wired as a disclosed hybrid (ADR-015). `predict_api.py` gained the declarative `OUTPUT_PROVENANCE` and `SPIKE_BLIND_LEVERS` constants. **Please:** ship `thresholds.json` and `whatif_sanity.csv`; confirm the `> 180` vs `>= 180` label boundary | integrated |
+| 2026-10-21 | P1 | `pytest -m contract` against real: **passes** (P3 export + P2 classifier) | closed |

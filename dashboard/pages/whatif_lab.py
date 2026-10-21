@@ -100,7 +100,7 @@ def render() -> None:
     default = ss.whatif_meal if isinstance(ss.whatif_meal, int) and ss.whatif_meal < len(meals) else len(meals) - 1
     mlabels = [f"{ts.hhmm(m.t)}  {m.label}, GL {m.gl:.0f}" for m in meals]
 
-    model_badge = "MOCK" if backend.describe()["model"] == "MOCK" else "MODEL_ESTIMATE"
+    model_badge = "MOCK" if "MOCK" in backend.model_parts().values() else "MODEL_ESTIMATE"
     kit.md(
         f'<div style="display:flex;gap:8px;margin:-6px 0 12px">{common.prov_badge("MODEL_ESTIMATE")} '
         f"{common.prov_badge(model_badge)}</div>"
@@ -124,6 +124,7 @@ def render() -> None:
     db = common.food_db()
     units = dict(zip(db["food"], db["portion_unit"]))
     label_to_food = {food_label(f): f for f in units}
+    millet = next((f for f in scenario.MILLET_ROTI if f in units), scenario.MILLET_ROTI[0])
 
     # ------------------------------------------------------------ lever tray (the one shadow)
     with tray:
@@ -137,7 +138,7 @@ def render() -> None:
                 type="primary" if ss.get("lv_preset") == name else "secondary",
             ):
                 try:
-                    _apply_preset(name, scenario.preset(name, base_state, idx), items)
+                    _apply_preset(name, scenario.preset(name, base_state, idx, millet), items)
                     st.rerun()
                 except ValueError as e:
                     st.toast(f"{PRESET_LABEL[name]} does not apply here: {e}.")
@@ -226,6 +227,8 @@ def render() -> None:
         ts.glucose_now(scen_state.history, scen_state.now),
     )
 
+    blind = backend.spike_blind_levers(sc, scen_fc)
+
     # ------------------------------------------------------------ comparison
     with left:
         with st.container(key="panel-whatif"):
@@ -298,12 +301,22 @@ def render() -> None:
                     "of the next 2 hours",
                     tone=good(cmp.d_time_above_180),
                 ),
-                kit.Readout(
-                    "Δ spike probability",
-                    _signed(cmp.d_spike_prob * 100),
-                    "pts",
-                    f"{T.fmt_pct(base_fc.spike_prob)} → {T.fmt_pct(scen_fc.spike_prob)}",
-                    tone=good(cmp.d_spike_prob * 100),
+                (
+                    kit.Readout(
+                        "Δ spike probability",
+                        "n/a",
+                        "",
+                        "Classifier cannot see this lever",
+                        foot_tone="warn",
+                    )
+                    if blind
+                    else kit.Readout(
+                        "Δ spike probability",
+                        _signed(cmp.d_spike_prob * 100),
+                        "pts",
+                        f"{T.fmt_pct(base_fc.spike_prob)} → {T.fmt_pct(scen_fc.spike_prob)}",
+                        tone=good(cmp.d_spike_prob * 100),
+                    )
                 ),
                 kit.Readout(
                     "Δ hypo probability",
@@ -330,6 +343,12 @@ def render() -> None:
             names = " + ".join(f"{i['portion']:g} {i['unit']} {food_label(i['food'])}" for i in new_items)
             flags = "".join(f" ⚠ {f}." for f in resolved.assumption_flags or [])
             notes.append(f"Swap resolves to {names}: GL {resolved.gl:.0f}, was {meal.gl:.0f}.{flags}")
+        if blind:
+            notes.append(
+                f"Spike probability is not compared: it comes from the XGBoost classifier, which reads only the "
+                f"past 6 hours, so it cannot see {' or '.join(blind)}. The curve, peak and time above 180 come "
+                "from the MOCK predictor."
+            )
         if scen_state.now != base_state.now:
             notes.append(f"The earlier meal moves the scenario's evaluation time to {ts.hhmm(scen_state.now)}.")
         for n in notes:

@@ -46,7 +46,7 @@ FEATURE_REGISTRY: dict[str, FeatureSpec] = {
 
 FALLBACK = (
     "Feature attributions are not available for this forecast, so no explanation is shown. "
-    "The forecast and its uncertainty band are still valid model estimates."
+    "The forecast and its uncertainty band are still shown, under their provenance badge."
 )
 CAPTION = "Explains the model, not the biology."
 ATTENTION_CAPTION = "Attention weights are a directional indicator, not a rigorous attribution."

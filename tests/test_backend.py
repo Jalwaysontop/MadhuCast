@@ -84,6 +84,9 @@ class TestContract:
         self._check_all()
 
     @pytest.mark.contract
-    def test_contract_real(self):
+    def test_contract_real(self, request):
+        # Gate the files on disk when they exist; otherwise export P3's pipeline to a temp dir first.
+        if not any(backend.PROFILES_DIR.glob("P-*.json")):
+            request.getfixturevalue("real_data")
         backend.clear_caches()
         self._check_all()

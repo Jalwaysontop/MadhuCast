@@ -25,6 +25,7 @@ from src.serving import timeseries as ts
 
 WALK_METS = 3.5
 RICE_TO_MILLET_ROTI = 2.0  # 1 katori cooked rice ≈ 2 millet rotis by carbohydrate (~40 g)
+MILLET_ROTI = ("millet roti (bajra)", "bajra roti")  # mock food DB name, then P3's (ADR-016)
 Resolver = Callable[[list[dict[str, Any]]], Meal]
 
 
@@ -181,16 +182,22 @@ def compare(
 # --------------------------------------------------------------------------- presets
 
 
-def rice_to_millet(items: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
-    """Swap rice items for millet roti at equal carbohydrate; None if the meal has no rice."""
-    if not any("rice" in i["food"] and "biryani" not in i["food"] for i in items):
+def _is_rice(food: str) -> bool:
+    f = food.lower()
+    return "rice" in f and "biryani" not in f
+
+
+def rice_to_millet(items: list[dict[str, Any]], millet: str = MILLET_ROTI[0]) -> list[dict[str, Any]] | None:
+    """Swap rice items for millet roti at equal carbohydrate; None if the meal has no rice.
+    ``millet`` is the millet-roti name in the active food DB."""
+    if not any(_is_rice(i["food"]) for i in items):
         return None
     out = []
     for i in items:
-        if "rice" in i["food"] and "biryani" not in i["food"]:
+        if _is_rice(i["food"]):
             out.append(
                 {
-                    "food": "millet roti (bajra)",
+                    "food": millet,
                     "portion": round(float(i["portion"]) * RICE_TO_MILLET_ROTI),
                     "unit": "piece",
                 }
@@ -203,13 +210,15 @@ def rice_to_millet(items: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
 PRESETS = ("Rice → millet roti", "+20 min post-meal walk", "Short sleep (5 h)", "Combined")
 
 
-def preset(name: str, state: PatientState, meal_index: int | None) -> Scenario:
+def preset(name: str, state: PatientState, meal_index: int | None, millet: str = MILLET_ROTI[0]) -> Scenario:
     """Scenario for a named preset. Raises ValueError when the preset does not apply."""
     swap = None
     if name in ("Rice → millet roti", "Combined"):
-        if meal_index is None or not state.meals[meal_index].items:
+        meal_items = state.meals[meal_index].items if meal_index is not None else None
+        if not meal_items and name == "Rice → millet roti":
             raise ValueError("no itemised meal selected")
-        items = rice_to_millet(state.meals[meal_index].items)
+        # Combined still applies the walk to a macros-only meal (most logged CGMacros meals).
+        items = rice_to_millet(meal_items, millet) if meal_items else None
         if items is None and name == "Rice → millet roti":
             raise ValueError("selected meal contains no rice")
         swap = {"meal_index": meal_index, "items": items} if items else None

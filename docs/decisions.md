@@ -83,5 +83,26 @@ Short ADRs: context, decision, consequence. Newest at the bottom.
 - **Decision:** `MADHUTWIN_DEMO=1` pins P-010 and replay time 20:00 IST. The mock cohort is seeded (`20261120`), and predictions are deterministic (tested).
 - **Consequence:** The video can be re-recorded identically, and screenshots in `docs/figures/` match it.
 
+## ADR-015: P2's spike classifier runs as a disclosed hybrid
+- **Context:** P2 delivered an XGBoost spike classifier (`models/xgb_all_cgmacros.json`). It does not produce glucose quantiles, hypo risk or attributions, so `predict_api.py` fills those from the mock and labels the whole forecast MOCK. Three problems showed up when the dashboard ran on it:
+  - Patients with under six hours of fresh history make the adapter raise `P2:input`. One such patient (P-007, CGM gap) blanked the alert queue, forecast view and trust page.
+  - The classifier reads only the past six hours, so a walk, a later meal or the sleep proxy leave `spike_prob` unchanged. A later meal also drops out of its input entirely: "delay dinner 60 min" read as spike risk 19% → 6%.
+  - The sidebar badged the model MODEL_ESTIMATE although most of the forecast is mock.
+- **Decision:**
+  - `backend` turns a `P2:input` refusal into a mock forecast for that patient. It is labelled MOCK, with "real model skipped" in `model_version` and the classifier detector off. Any other `ContractError` still raises.
+  - `predict_api.OUTPUT_PROVENANCE` and `SPIKE_BLIND_LEVERS` declare what the adapter really models. `backend.model_parts()` and `backend.spike_blind_levers()` read them, so pages need no model-specific code.
+  - The sidebar shows one badge per forecast part. The what-if lab shows Δ spike probability as **n/a**, with the reason, for blind levers. The forecast view footnotes the spike tile.
+  - The explain and trust pages say the real model ships no attributions, instead of "nothing to test".
+- **Consequence:** `MADHUTWIN_MODEL=real` renders every page for every patient (AppTest-tested). Once P2 ships quantiles or SHAP values, they update the two constants and the hybrid badges go away.
+
+## ADR-016: P1 bridges P3's pipeline onto the R3 contract
+- **Context:** P3's pipeline ends in training windows (NPZ). There were no per-patient files (R3.1–R3.3). `meal_engine.py` has no `resolve_meal()`, and `indian_food_db.csv` uses its own columns. The raw CGMacros files are not in the repo, so P3's committed windows come from its seeded demo cohort. P3's synthetic EHR cohort is T2D-only, so only T2D wearers get paired.
+- **Decision:** P3's files are not edited.
+  - `src/serving/p3_bridge.py` maps the food table onto `FOOD_DB_COLUMNS`: lower-cased `food_name`, with GL and GI from P3's `compute_nutrient_vector`. P3's preparation GI multipliers become `assumption_flag`. `resolve_meal()` is exact-match only, never P3's fuzzy first match.
+  - `src/serving/p3_export.py` (`scripts/export_contract_data.py`) reruns P3's steps (loader or demo fallback, EHR, pairing, augmentation) and writes the contract files, each validated before writing.
+  - P1 conversion choices: wall-clock times are read as IST; glucose is mean-binned to 5 min and never interpolated; METs = 1.2 + 2.3 × cadence/100; the sleep proxy is the logged sleep interval; GL uses GI 55 where the log has no GI (flagged); healthy and prediabetes wearers keep their own record with no pairing block.
+  - The rice → millet preset looks names up case-insensitively and uses the active DB's millet roti. "Combined" still applies the walk to a macros-only meal.
+- **Consequence:** `MADHUTWIN_DATA=real` and `MADHUTWIN_BACKEND=real` render every page. The contract gate passes. Generated files stay under the git-ignored `data/processed/`.
+
 ## Cut-line check (Day 12): to be recorded with the team
 - Status on P1 side: F4, F6, F7, F9 and F10 are all built on mock. Nothing from P1's cut list has been cut. Record the team decision here on Day 12.

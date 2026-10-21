@@ -35,6 +35,7 @@ from src.contracts import (
     Meal,
     PatientProfile,
     PatientState,
+    Provenance,
     Scenario,
 )
 from src.serving import timeseries as ts
@@ -129,6 +130,15 @@ def _real_state(pid: str, now: datetime | None) -> PatientState:
     )
 
 
+def data_provenance() -> str:
+    """Badge for the active data: MOCK, or REAL only if every patient's wearable stream is REAL
+    (P3's demo cohort is SYNTHETIC even when MADHUTWIN_DATA=real)."""
+    if data_mode() == "mock":
+        return Provenance.MOCK.value
+    worn = {_real_profile(p).provenance.get("wearable", Provenance.REAL) for p in list_patients()}
+    return Provenance.REAL.value if worn <= {Provenance.REAL} else Provenance.SYNTHETIC.value
+
+
 def get_state(pid: str, now: datetime | None = None) -> PatientState:
     """Patient state at ``now`` (None = latest available sample)."""
     if data_mode() == "mock":
@@ -144,19 +154,17 @@ def resolve_meal(items: list[dict[str, Any]]) -> Meal:
         from src.serving import mock_data
 
         return mock_data.resolve_meal(items)
-    try:
-        engine = importlib.import_module("src.data.meal_engine")
-    except ImportError as e:
-        raise ContractError("P3:meal_engine", f"src/data/meal_engine.py not importable: {e}") from e
-    out = engine.resolve_meal(items)
+    from src.serving import p3_bridge  # P3's engine has no resolve_meal(); the bridge maps it (ADR-016)
+
+    out = p3_bridge.resolve_meal(items, FOOD_DB_PATH)
     return out if isinstance(out, Meal) else _validate(Meal, out, "P3:resolve_meal")
 
 
 @lru_cache(maxsize=1)
 def _real_food_db() -> pd.DataFrame:
-    if not FOOD_DB_PATH.exists():
-        raise ContractError("P3:indian_food_db", f"{FOOD_DB_PATH} not found")
-    df = pd.read_csv(FOOD_DB_PATH)
+    from src.serving import p3_bridge
+
+    df = p3_bridge.food_db(FOOD_DB_PATH)
     missing = [c for c in FOOD_DB_COLUMNS if c not in df.columns]
     if missing:
         raise ContractError("P3:indian_food_db", f"missing columns {missing}")
@@ -188,8 +196,67 @@ def _provider_predict(state: PatientState, scenario: Scenario, explain: bool) ->
         from src.serving import mock_predict
 
         return mock_predict.predict(state, scenario, explain=explain)
-    raw = _real_predictor().predict(state, scenario)
+    try:
+        raw = _real_predictor().predict(state, scenario)
+    except ContractError as e:
+        if e.source != "P2:input":
+            raise
+        return _history_fallback(state, explain, e.detail)
     return raw if isinstance(raw, Forecast) else _validate(Forecast, raw, "P2:predict")
+
+
+def _history_fallback(state: PatientState, explain: bool, why: str) -> Forecast:
+    """The real model refused its input (e.g. under six hours of fresh history). That is a data
+    condition, not a contract break, so one patient must not take down the alert queue: fall back
+    to the mock for this forecast, labelled MOCK, with the classifier marked as not run."""
+    from src.serving import mock_predict
+
+    fc = mock_predict.predict(state, explain=False)
+    flags = dict(fc.detector_flags or {}) | {"classifier": False}
+    return fc.model_copy(
+        update={
+            "detector_flags": flags,
+            "model_version": f"{fc.model_version} (real model skipped: {why.split(';')[0]})",
+            "provenance": Provenance.MOCK,
+        }
+    )
+
+
+def model_parts() -> dict[str, str]:
+    """Provenance per forecast part for the UI badges, e.g. {"spike probability": "MODEL_ESTIMATE",
+    "curve, bands, hypo": "MOCK"} for P2's hybrid adapter. A predictor that does not declare
+    OUTPUT_PROVENANCE is taken as fully MODEL_ESTIMATE."""
+    if model_mode() == "mock":
+        return {"forecast": "MOCK"}
+    return dict(getattr(_real_predictor(), "OUTPUT_PROVENANCE", None) or {"forecast": "MODEL_ESTIMATE"})
+
+
+def is_real_spike(fc: Forecast) -> bool:
+    """True when this forecast's spike_prob came from the real model (not the mock or a fallback)."""
+    return (
+        model_mode() == "real"
+        and "real model skipped" not in (fc.model_version or "")
+        and (model_parts().get("spike probability", model_parts().get("forecast")) == "MODEL_ESTIMATE")
+    )
+
+
+def spike_blind_levers(scenario: Scenario, fc: Forecast) -> list[str]:
+    """What-if levers in ``scenario`` that ``fc.spike_prob`` cannot respond to, as UI phrases.
+
+    P2's classifier reads only past history (SPIKE_BLIND_LEVERS in predict_api), so a walk, a later
+    meal or a sleep change leaves its probability unchanged, and a later meal even drops out of its
+    input. The what-if page must not present that as an effect."""
+    if not is_real_spike(fc):
+        return []
+    blind = set(getattr(_real_predictor(), "SPIKE_BLIND_LEVERS", ()))
+    out = []
+    if "walk" in blind and scenario.walk_minutes:
+        out.append("a post-meal walk")
+    if "later_meal" in blind and scenario.meal_time_shift_min > 0:
+        out.append("a later meal time")
+    if "sleep" in blind and scenario.prior_sleep_hours is not None:
+        out.append("last night's sleep")
+    return out
 
 
 def run_scenario(
@@ -283,5 +350,8 @@ def time_window() -> tuple[datetime, datetime, datetime]:
 
 
 def clear_caches() -> None:
+    from src.serving import p3_bridge
+
     for fn in (_real_profile, _real_food_db, _real_predictor):
         fn.cache_clear()
+    p3_bridge.clear_cache()
