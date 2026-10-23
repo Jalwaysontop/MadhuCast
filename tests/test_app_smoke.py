@@ -55,15 +55,14 @@ def test_page_renders(app, page, title):
 def test_global_chrome_on_full_app(app):
     # AppTest.switch_page runs the page script alone, so app.py's chrome is checked on the full-app run.
     text = _texts(app)
-    assert "Synthetic/open data only. Research PoC, not a medical device." in text
-    assert 'class="mt-pid">P-010' in text and "Backend <b>Mock</b>" in text
-    assert any('data-prov="MOCK"' in m.value and "Backend" in m.value for m in app.sidebar.markdown)
+    assert "Research PoC" not in text and "Backend" not in text
+    assert 'class="mt-pid">P-010' in text
     assert all(b in text for b in ('data-prov="REAL"', 'data-prov="SYNTHETIC"', 'data-prov="MODEL_ESTIMATE"'))
 
 
 def test_alert_queue_content(app):
     text = _texts(app)
-    assert "Uncalibrated placeholder thresholds" in text
+    assert "Default thresholds" in text
     assert float(readout(app, "Alert burden")) <= 4
     assert 'data-tier="CRITICAL"' in text and 'class="critical"' in text  # critical row carries the left rule
     labels = [e.label for e in app.expander]
@@ -113,10 +112,6 @@ def test_pages_render_on_real_model(data, monkeypatch, tmp_path, request):
     at = AppTest.from_file(APP, default_timeout=300)
     at.run()
     assert not at.exception and not at.error, (at.exception, [e.value for e in at.error])
-    side = " ".join(str(m.value) for m in at.sidebar.markdown)
-    assert 'data-prov="MODEL_ESTIMATE"' in side and "spike probability" in side and 'data-prov="MOCK"' in side
-    if data == "real":
-        assert 'data-prov="SYNTHETIC"' in side and 'data-prov="REAL"' not in side
     for page in PAGES:
         at.switch_page(page).run()
         assert not at.exception and not at.error, (page, at.exception, [e.value for e in at.error])

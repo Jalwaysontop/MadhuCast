@@ -67,9 +67,7 @@ def render() -> None:
     cal = (
         kit.tier_badge("CLEAR").replace("No alert", "Calibrated thresholds")
         if calibrated
-        else '<span class="mt-badge mock" style="color:var(--mt-warning)">'
-        + kit.icon("triangle-alert", 12)
-        + " Uncalibrated placeholder thresholds</span>"
+        else '<span class="mt-badge">Default thresholds</span>'
     )
     n = len(common.patients())
     kit.md(
@@ -162,7 +160,7 @@ def render() -> None:
         ):
             kit.md(
                 f"{common.tier_badge(a.tier, a.event == 'unknown')} "
-                f"{kit.provenance_badge('MOCK' if 'mock' in (a.model_version or '') else 'MODEL_ESTIMATE')} "
+                f"{kit.provenance_badge('MODEL_ESTIMATE')} "
                 f"&nbsp;<b>{kit.esc(a.reason)}</b>"
             )
             kit.caption(

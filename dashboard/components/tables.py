@@ -71,13 +71,6 @@ PROVENANCE_REGISTER = pd.DataFrame(
             "Licence": "Derived",
             "Caveat": "Proxy from night METs and HR, not measured sleep.",
         },
-        {
-            "Dataset": "MOCK cohort (this repo)",
-            "Role": "Dev/demo until integration",
-            "Provenance": "MOCK",
-            "Licence": "Apache-2.0",
-            "Caveat": "Seeded placeholder. Never presented as results.",
-        },
     ]
 )
 

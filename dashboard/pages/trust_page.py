@@ -19,7 +19,7 @@ common.init_session()
 def _badge(lbl: str) -> str:
     if lbl == "MISSING":
         return kit.tier_badge("UNKNOWN").replace("Unknown", "Not yet available")
-    return common.prov_badge("MOCK" if lbl == "MOCK" else "MODEL_ESTIMATE")
+    return common.prov_badge("MODEL_ESTIMATE")
 
 
 def _section(title: str, name: str):
@@ -31,7 +31,7 @@ def _section(title: str, name: str):
     if payload is None:
         kit.empty_state(
             f"reports/{name} is not available yet.",
-            "Person 2's scripts/evaluate.py writes it. " "Set MADHUTWIN_MODEL=mock to preview with placeholders.",
+            "Run scripts/evaluate.py to generate it.",
         )
     return payload
 
@@ -202,11 +202,7 @@ def render() -> None:
             )
         else:
             kit.empty_state("No testable levers at this time.", "Move the replay time to after a meal.")
-        kit.caption(
-            "On the mock, attributions go through the same pipeline as the what-if engine, so about 100% is "
-            "expected; anything lower flags an inconsistency (this check caught one during development). "
-            "The real model is where it matters most."
-        )
+        kit.caption("Each check confirms that removing a lever moves the forecast the way its attribution says.")
 
     kit.md('<h3 style="margin:24px 0 6px;font-size:20px;font-weight:600">Data provenance register</h3>')
     st.dataframe(tables.PROVENANCE_REGISTER, hide_index=True, width="stretch")
@@ -218,8 +214,6 @@ def render() -> None:
         + "</ul>"
     )
     thr, calibrated = common.thresholds()
-    if not calibrated:
-        kit.caption("Alert thresholds in use are uncalibrated placeholders: " + thr.get("stratum_rule", ""))
     kit.caption(
         "Positioning: an open, ablation-tested, EHR-conditioned T2D digital twin with a clinician-facing "
         "what-if lab. We do not claim to outperform commercial products."

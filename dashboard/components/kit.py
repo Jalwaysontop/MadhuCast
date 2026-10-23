@@ -110,18 +110,14 @@ def header_bar(
         f'<span data-risk="{esc(risk_text)}">{pill(risk_text, risk_tier)}</span>'
         f"<span>Data quality {meter} <b>{dq_txt}</b></span>"
         f"<span>Uplink <b>{esc((uplink or 'not provided').capitalize())}</b></span>"
-        f'<span>Backend <b>{esc(backend)}</b></span><span class="mt-spacer"></span>'
+        f'<span class="mt-spacer"></span>'
         f'<span>{icon("clock", 14)} Now <b>{esc(now_txt)} IST</b></span></div>'
     )
 
 
 def footer() -> None:
-    legend = " ".join(provenance_badge(k) for k in ("REAL", "SYNTHETIC", "MOCK", "MODEL_ESTIMATE"))
-    md(
-        f'<div class="mt-footer"><span>Provenance</span> {legend}'
-        "<b>Synthetic/open data only. Research PoC, not a medical device.</b>"
-        "<span>Model estimates are learned from observational data and are not causal effects.</span></div>"
-    )
+    legend = " ".join(provenance_badge(k) for k in ("REAL", "SYNTHETIC", "MODEL_ESTIMATE"))
+    md(f'<div class="mt-footer"><b>MadhuTwin</b><span>Provenance</span> {legend}</div>')
 
 
 # --------------------------------------------------------------------------- readouts

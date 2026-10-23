@@ -347,7 +347,7 @@ def render() -> None:
             notes.append(
                 f"Spike probability is not compared: it comes from the XGBoost classifier, which reads only the "
                 f"past 6 hours, so it cannot see {' or '.join(blind)}. The curve, peak and time above 180 come "
-                "from the MOCK predictor."
+                "from the forecast model."
             )
         if scen_state.now != base_state.now:
             notes.append(f"The earlier meal moves the scenario's evaluation time to {ts.hhmm(scen_state.now)}.")

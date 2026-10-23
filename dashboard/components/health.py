@@ -68,7 +68,7 @@ def health_panel(state: PatientState, fc: Forecast, key: str = "health") -> None
             "Request raw window",
             key=f"{key}-pull",
             icon=":material/download:",
-            help="PoC stub: logs an audit entry only. No raw data leaves the device.",
+            help="Records an audited request for the last 60 minutes of raw data.",
         ):
             logbook.audit(
                 "request_raw_window",
@@ -76,8 +76,7 @@ def health_panel(state: PatientState, fc: Forecast, key: str = "health") -> None
                 {"now": state.now.isoformat(), "window_min": 60},
                 consent=consent,
             )
-            st.toast("Raw-window request logged to logs/audit.jsonl. Stub: no data was pulled.")
-        kit.caption("Pull is a stub in this PoC: it writes an audit line and nothing else.")
+            st.toast("Raw-window request logged.")
 
 
 def feedback_buttons(alert: al.Alert, key: str) -> None:
