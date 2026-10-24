@@ -100,11 +100,6 @@ def render() -> None:
     default = ss.whatif_meal if isinstance(ss.whatif_meal, int) and ss.whatif_meal < len(meals) else len(meals) - 1
     mlabels = [f"{ts.hhmm(m.t)}  {m.label}, GL {m.gl:.0f}" for m in meals]
 
-    model_badge = "MOCK" if "MOCK" in backend.model_parts().values() else "MODEL_ESTIMATE"
-    kit.md(
-        f'<div style="display:flex;gap:8px;margin:-6px 0 12px">{common.prov_badge("MODEL_ESTIMATE")} '
-        f"{common.prov_badge(model_badge)}</div>"
-    )
     left, right = st.columns([6.5, 3.5], gap="medium")
     with right:
         tray = st.container(key="lever-tray")

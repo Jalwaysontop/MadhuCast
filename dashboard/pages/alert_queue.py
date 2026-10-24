@@ -160,7 +160,6 @@ def render() -> None:
         ):
             kit.md(
                 f"{common.tier_badge(a.tier, a.event == 'unknown')} "
-                f"{kit.provenance_badge('MODEL_ESTIMATE')} "
                 f"&nbsp;<b>{kit.esc(a.reason)}</b>"
             )
             kit.caption(

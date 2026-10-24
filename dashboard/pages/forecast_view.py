@@ -24,10 +24,6 @@ def render() -> None:
     p = state.profile
     mode = common.theme()
     st.title("Forecast")
-    kit.md(
-        f'<div style="display:flex;gap:8px;margin:-6px 0 12px">{common.prov_badge("MODEL_ESTIMATE")} '
-        f"{common.prov_badge(fc.provenance)}</div>"
-    )
 
     g_now = ts.glucose_now(state.history, state.now)
     slope = ts.glucose_slope(state.history, state.now)

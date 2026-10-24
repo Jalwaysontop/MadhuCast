@@ -1,7 +1,7 @@
 """Provider adapter: the only module pages import to get data, predictions or reports.
 
 Selection (env vars, read on every call so tests can monkeypatch):
-    MADHUTWIN_BACKEND = mock | real     default for both subsystems (default: mock)
+    MADHUTWIN_BACKEND = mock | real     default for both subsystems (default: real)
     MADHUTWIN_DATA    = mock | real     overrides data (profiles, history, food DB, meal engine)
     MADHUTWIN_MODEL   = mock | real     overrides model (predict) and reports/
 
@@ -55,7 +55,7 @@ Mode = Literal["mock", "real"]
 
 
 def _mode(var: str) -> Mode:
-    raw = os.environ.get(var) or os.environ.get("MADHUTWIN_BACKEND") or "mock"
+    raw = os.environ.get(var) or os.environ.get("MADHUTWIN_BACKEND") or "real"
     raw = raw.strip().lower()
     if raw not in ("mock", "real"):
         raise ValueError(f"{var} must be 'mock' or 'real', got {raw!r}")

@@ -14,7 +14,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from dashboard.theme.tokens import FOOD_HINDI, ICONS, PROV_COLOR, TIER_COLOR, TIER_ICON, Mode
+from dashboard.theme.tokens import FOOD_HINDI, ICONS, TIER_COLOR, TIER_ICON, Mode
 
 esc = html.escape
 
@@ -44,15 +44,8 @@ def icon(name: str, size: int = 16, label: str | None = None) -> str:
 
 
 def provenance_badge(kind: str) -> str:
-    """REAL solid · SYNTHETIC flask · MOCK dashed · MODEL_ESTIMATE jamun. Min 12px, AA contrast."""
-    k = kind.value if hasattr(kind, "value") else str(kind)
-    label = {"MODEL_ESTIMATE": "Model estimate", "REAL": "Real", "SYNTHETIC": "Synthetic", "MOCK": "Mock"}.get(
-        k, k.title()
-    )
-    color = PROV_COLOR.get(k, "ink_muted").replace("_", "-")
-    ic = icon("flask-conical", 12) if k == "SYNTHETIC" else ""
-    cls = "mt-badge mock" if k == "MOCK" else "mt-badge"
-    return f'<span class="{cls}" style="color:var(--mt-{color})" data-prov="{k}">{ic}{esc(label)}</span>'
+    """Provenance tags are hidden across the UI."""
+    return ""
 
 
 def tier_badge(tier: str) -> str:
@@ -116,8 +109,7 @@ def header_bar(
 
 
 def footer() -> None:
-    legend = " ".join(provenance_badge(k) for k in ("REAL", "SYNTHETIC", "MODEL_ESTIMATE"))
-    md(f'<div class="mt-footer"><b>MadhuTwin</b><span>Provenance</span> {legend}</div>')
+    md('<div class="mt-footer"><b>MadhuTwin</b></div>')
 
 
 # --------------------------------------------------------------------------- readouts

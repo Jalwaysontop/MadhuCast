@@ -23,10 +23,6 @@ def render() -> None:
     state, fc = common.run()
     mode = common.theme()
     st.title("Why this forecast?")
-    kit.md(
-        f'<div style="display:flex;gap:8px;margin:-6px 0 12px">{common.prov_badge("MODEL_ESTIMATE")} '
-        f"{common.prov_badge(fc.provenance)}</div>"
-    )
     sentences = T.explain(fc, k=2)
     kit.lead(" ".join(sentences))
     kit.caption(

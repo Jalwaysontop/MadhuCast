@@ -1,4 +1,4 @@
-"""MadhuTwin clinician dashboard. Run: MADHUTWIN_BACKEND=mock streamlit run dashboard/app.py"""
+"""MadhuTwin clinician dashboard. Run: streamlit run dashboard/app.py"""
 
 import sys
 from pathlib import Path

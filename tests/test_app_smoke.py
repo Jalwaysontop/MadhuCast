@@ -57,7 +57,7 @@ def test_global_chrome_on_full_app(app):
     text = _texts(app)
     assert "Research PoC" not in text and "Backend" not in text
     assert 'class="mt-pid">P-010' in text
-    assert all(b in text for b in ('data-prov="REAL"', 'data-prov="SYNTHETIC"', 'data-prov="MODEL_ESTIMATE"'))
+    assert 'data-prov=' not in text
 
 
 def test_alert_queue_content(app):
